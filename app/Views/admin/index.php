@@ -4,12 +4,12 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Manajemen User</h1>
 
-    <?php if (session()->getFlashdata('message')) : ?>
+    <?php if (session()->getFlashdata('message')): ?>
         <div class="alert alert-success" role="alert">
             <?= session()->getFlashdata('message'); ?>
         </div>
     <?php endif; ?>
-    <?php if (session()->getFlashdata('error')) : ?>
+    <?php if (session()->getFlashdata('error')): ?>
         <div class="alert alert-danger" role="alert">
             <?= session()->getFlashdata('error'); ?>
         </div>
@@ -25,7 +25,8 @@
                     <form action="" method="get">
                         <div class="input-group">
                             <input type="text" class="form-control bg-light border-0 small" placeholder="Cari user..."
-                                aria-label="Search" name="keyword" value="<?= esc(isset($_GET['keyword']) ? $_GET['keyword'] : ''); ?>">
+                                aria-label="Search" name="keyword"
+                                value="<?= esc(isset($_GET['keyword']) ? $_GET['keyword'] : ''); ?>">
                             <div class="input-group-append">
                                 <button class="btn btn-primary" type="submit">
                                     <i class="fas fa-search fa-sm"></i>
@@ -40,7 +41,7 @@
                     <a href="<?= base_url('admin?role=panitia'); ?>" class="btn btn-secondary btn-sm">Panitia</a>
                     <a href="<?= base_url('admin?role=berqurban'); ?>" class="btn btn-secondary btn-sm">Berqurban</a>
                     <a href="<?= base_url('admin?role=user'); ?>" class="btn btn-secondary btn-sm">Warga</a>
-                    </div>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -57,21 +58,24 @@
                     </thead>
                     <tbody>
                         <?php $i = 1 + (isset($_GET['page']) ? ($_GET['page'] - 1) * 20 : 0); ?>
-                        <?php foreach($users as $user) : ?>
+                        <?php foreach ($users as $user): ?>
                             <tr>
                                 <td><?= $i++; ?></td>
                                 <td><?= $user->username; ?></td>
                                 <td><?= $user->email; ?></td>
                                 <td>
                                     <span class="badge badge-<?php
-    if ($user->name == 'admin') {
-        echo 'success';
-    } elseif ($user->name == 'panitia') {
-        echo 'info'; // or 'primary', 'dark', etc.
-    } else {
-        echo 'warning';
-    }
-?>"><?= $user->name; ?></span>
+                                    if ($user->name == 'admin') {
+                                        echo 'success';
+                                    } elseif ($user->name == 'panitia') {
+                                        echo 'dark'; // or 'primary', 'dark', etc.
+                                    }
+                                    elseif ($user->name == 'user') {
+                                        echo 'warning'; // or 'primary', 'dark', etc.
+                                    } else {
+                                        echo 'primary';
+                                    }
+                                    ?>"><?= $user->name; ?></span>
                                 </td>
                                 <td>
                                     <span class="badge badge-<?= ($user->active == 1) ? 'success' : 'secondary'; ?>">
@@ -79,7 +83,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <a href="<?= base_url('admin/' . $user->userid); ?>" class="btn btn-info btn-sm">Detail</a>
+                                    <a href="<?= base_url('admin/' . $user->userid); ?>"
+                                        class="btn btn-info btn-sm">Detail</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

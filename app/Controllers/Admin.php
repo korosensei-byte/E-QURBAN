@@ -51,24 +51,84 @@ class Admin extends BaseController
         return view('admin/index', $data);
     }
 
-    public function detail($id = 0)
-    {
-        $data['title'] = 'Detail User';
+public function detail($id = 0)
+{
+    $data['title'] = 'User Detail';
 
-        $this->builder->select('users.id as userid, username, email, fullname, user_image, name, active'); // Tambahkan 'active'
-        $this->builder->join('auth_groups_users', 'auth_groups_users.user_id = users.id');
-        $this->builder->join('auth_groups', 'auth_groups.id = auth_groups_users.group_id');
-        $this->builder->where('users.id', $id);
-        $query      = $this->builder->get();
+    // Ambil semua data grup/role yang ada
+    $groupModel = new \Myth\Auth\Models\GroupModel();
+    $data['all_roles'] = $groupModel->findAll();
 
-        $data['user']  = $query->getRow();
+    // Ambil data user yang spesifik (dari tabel users)
+    $this->builder->select('users.id as userid, username, email, fullname, user_image, created_at');
+    $this->builder->where('users.id', $id);
+    $query = $this->builder->get();
+    $data['user'] = $query->getRow();
 
-        if (empty($data['user'])) {
-            return redirect()->to('/admin')->with('error', 'User tidak ditemukan.');
-        }
-
-        return view('admin/detail', $data);
+    // Jika user tidak ditemukan, kembali ke halaman daftar user
+    if (empty($data['user'])) {
+        return redirect()->to('/admin');
     }
+
+    // --- BAGIAN YANG DIPERBAIKI ---
+    // Ambil role yang dimiliki user saat ini menggunakan query join
+    // Ini adalah cara yang benar, bukan $userObject->getGroups()
+    $userGroups = $groupModel
+        ->select('auth_groups.id, auth_groups.name')
+        ->join('auth_groups_users', 'auth_groups_users.group_id = auth_groups.id')
+        ->where('auth_groups_users.user_id', $id)
+        ->findAll();
+
+    $data['user_roles'] = $userGroups;
+    // --- AKHIR BAGIAN YANG DIPERBAIKI ---
+
+    // Kirim semua data ke view
+    return view('admin/detail', $data);
+}
+
+public function updateUserRoles($id)
+{
+    // Model yang diperlukan
+    // PERHATIKAN: Kita akan menggunakan $groupModel untuk memanipulasi role,
+    // karena fungsi add/remove user dari grup ada di sini.
+    $groupModel = new \Myth\Auth\Models\GroupModel();
+
+    // 1. Dapatkan role ID baru dari form.
+    $newRoles = $this->request->getPost('roles') ?? [];
+
+    // 2. Dapatkan role ID yang dimiliki pengguna saat ini.
+    $currentUserGroups = $groupModel
+        ->select('auth_groups.id')
+        ->join('auth_groups_users', 'auth_groups_users.group_id = auth_groups.id')
+        ->where('auth_groups_users.user_id', $id)
+        ->findAll();
+    $currentUserRoleIds = array_column($currentUserGroups, 'id');
+
+    // 3. Logika Sinkronisasi:
+    //    a. Cari role yang harus DITAMBAHKAN
+    $rolesToAdd = array_diff($newRoles, $currentUserRoleIds);
+    if (!empty($rolesToAdd)) {
+        foreach ($rolesToAdd as $roleId) {
+            // --- PERBAIKAN DI SINI ---
+            // Panggil fungsi dari $groupModel, bukan $userModel
+            $groupModel->addUserToGroup($id, $roleId);
+        }
+    }
+
+    //    b. Cari role yang harus DIHAPUS
+    $rolesToRemove = array_diff($currentUserRoleIds, $newRoles);
+    if (!empty($rolesToRemove)) {
+        foreach ($rolesToRemove as $roleId) {
+            // --- PERBAIKAN DI SINI ---
+            // Panggil fungsi dari $groupModel, bukan $userModel
+            $groupModel->removeUserFromGroup($id, $roleId);
+        }
+    }
+
+    // 4. Siapkan pesan sukses dan kembalikan ke halaman detail
+    session()->setFlashdata('message', 'Roles pengguna berhasil diperbarui.');
+    return redirect()->to('/admin/' . $id);
+}
 
     // --- Contoh fungsionalitas admin lainnya (membutuhkan route dan view tambahan) ---
 

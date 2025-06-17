@@ -27,7 +27,9 @@
                             <th>Email</th>
                             <th>Jenis Hewan</th>
                             <th>Jumlah Bagian (Sapi)</th>
+                            <th>Grup Qurban</th>
                             <th>Status Pembayaran</th>
+                            <th>Jumlah Dibayar</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -40,14 +42,21 @@
                                 <td><?= $participant['email']; ?></td>
                                 <td><?= ucfirst($participant['animal_type']); ?></td>
                                 <td><?= $participant['share_number'] ?: '-'; ?></td>
+                                <td><?= $participant['qurban_group'] ?: '-'; ?></td>
                                 <td>
                                     <span class="badge badge-<?= $participant['payment_status'] === 'paid' ? 'success' : 'warning'; ?>">
                                         <?= ucfirst($participant['payment_status']); ?>
                                     </span>
                                 </td>
+                                <td>Rp <?= number_format($participant['amount_paid'], 0, ',', '.'); ?></td>
                                 <td>
+                                    <?php if ($participant['payment_status'] === 'unpaid') : ?>
+                                        <a href="<?= base_url('qurban/markaspaid/' . $participant['id']); ?>" class="btn btn-success btn-sm" onclick="return confirm('Apakah Anda yakin ingin mengubah status pembayaran ini menjadi LUNAS?');">Mark as Paid</a>
+                                    <?php else : ?>
+                                        <button class="btn btn-secondary btn-sm" disabled>Paid</button>
+                                    <?php endif; ?>
                                     <a href="#" class="btn btn-info btn-sm">Detail</a>
-                                    </td>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

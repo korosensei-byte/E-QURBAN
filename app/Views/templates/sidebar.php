@@ -8,34 +8,29 @@
 
     <?php if(in_groups('admin')) : ?>
         <hr class="sidebar-divider">
-
         <div class="sidebar-heading">
             Admin Menu
         </div>
-        <li class="nav-item">
+        <li class="nav-item <?= (current_url() == base_url('admin')) ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('admin'); ?>">
                 <i class="fas fa-users"></i>
                 <span>Manajemen User</span></a>
         </li>
-    <?php endif; ?>
-
-    <?php if(in_groups('admin') || in_groups('panitia')) : ?>
         <hr class="sidebar-divider">
-
         <div class="sidebar-heading">
             Manajemen Qurban
         </div>
-        <li class="nav-item">
+        <li class="nav-item <?= (current_url() == base_url('financial')) ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('financial'); ?>">
                 <i class="fas fa-money-bill-wave"></i>
                 <span>Rekapan Keuangan</span></a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item <?= (current_url() == base_url('qurban')) ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('qurban'); ?>">
                 <i class="fas fa-hand-holding-usd"></i>
                 <span>Pendataan Peserta Qurban</span></a>
         </li>
-        <li class="nav-item">
+        <li class="nav-item <?= (current_url() == base_url('distribution')) ? 'active' : '' ?>">
             <a class="nav-link" href="<?= base_url('distribution'); ?>">
                 <i class="fas fa-truck-loading"></i>
                 <span>Pembagian Daging</span></a>
@@ -43,16 +38,21 @@
     <?php endif; ?>
 
     <hr class="sidebar-divider">
-
     <div class="sidebar-heading">
         User Profile
     </div>
-    <li class="nav-item">
+    <li class="nav-item <?= (current_url() == base_url('user')) ? 'active' : '' ?>">
         <a class="nav-link" href="<?= base_url('user'); ?>">
             <i class="fas fa-user"></i>
             <span>My Profile</span></a>
     </li>
-
+    <?php if (in_groups('berqurban') || in_groups('user')) : // Asumsi role 'user' dan 'berqurban' berhak melihat QR card ?>
+    <li class="nav-item <?= (current_url() == base_url('user/myqrcard')) ? 'active' : '' ?>">
+        <a class="nav-link" href="<?= base_url('user/myqrcard'); ?>">
+            <i class="fas fa-qrcode"></i>
+            <span>Kartu Pengambilan Daging</span></a>
+    </li>
+    <?php endif; ?>
     <li class="nav-item">
         <a class="nav-link" href="#">
             <i class="fas fa-user-edit"></i>

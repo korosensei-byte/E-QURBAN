@@ -17,17 +17,24 @@ $routes->get('/admin/(:num)', 'Admin::detail/$1', ['filter' => 'role:admin']);
 
 
 // Rute untuk Keuangan
-$routes->group('financial', ['filter' => 'role:admin,panitia'], function($routes) {
+$routes->group('financial', ['filter' => 'role:admin'], function($routes) {
     $routes->get('/', 'Financial::index');
     $routes->get('add', 'Financial::add');
     $routes->post('save', 'Financial::save');
 });
 
 // Rute untuk Pendataan Qurban
-$routes->group('qurban', ['filter' => 'role:admin,panitia'], function($routes) {
+// $routes->group('qurban', ['filter' => 'role:admin,panitia'], function($routes) {
+//     $routes->get('/', 'Qurban::index');
+//     $routes->get('add', 'Qurban::add');
+//     $routes->post('save', 'Qurban::save');
+// });
+
+$routes->group('qurban', ['filter' => 'role:admin'], function($routes) {
     $routes->get('/', 'Qurban::index');
     $routes->get('add', 'Qurban::add');
     $routes->post('save', 'Qurban::save');
+    $routes->get('markaspaid/(:num)', 'Qurban::markAsPaid/$1'); // Tambahkan rute ini
 });
 
 // Rute untuk Pembagian Daging
@@ -35,18 +42,27 @@ $routes->group('distribution', ['filter' => 'role:admin,panitia'], function($rou
     $routes->get('/', 'Distribution::index');
     $routes->get('add', 'Distribution::add');
     $routes->post('save', 'Distribution::save');
+    $routes->post('autodistributemeat', 'Distribution::autoDistributeMeat'); // Tambahkan ini
     $routes->get('generateqrcode/(:any)', 'Distribution::generateQrCode/$1'); // Untuk menampilkan QR code
     $routes->get('scan', 'Distribution::scanQrCode');
     $routes->post('verifyqrcode', 'Distribution::verifyQrCode');
 });
 
 // Rute untuk User (My Profile dan Kartu QR)
+// $routes->group('user', ['filter' => 'login'], function($routes) {
+//     $routes->get('/', 'User::index');
+//     $routes->get('myqrcard', 'User::myQrCard');
+//     $routes->get('generateqrcard/(:any)', 'User::generateQrCodeForUser/$1');
+// });
+
 $routes->group('user', ['filter' => 'login'], function($routes) {
     $routes->get('/', 'User::index');
     $routes->get('myqrcard', 'User::myQrCard');
-    $routes->get('generateqrcard/(:any)', 'User::generateQrCodeForUser/$1'); // Untuk QR code di kartu user
+    $routes->get('generateqrcard/(:any)', 'User::generateQrCodeForUser/$1');
+    $routes->get('registerqurban', 'User::registerQurban'); // Tambahkan rute ini
+    $routes->post('saveregisterqurban', 'User::saveRegisterQurban'); // Tambahkan rute ini
 });
 
 // Rute default Myth:Auth
 // $routes->addRedirect('login', 'login');
-// $routes->addRedirect('register', 'register');
+// // $routes->addRedirect('register', 'register'); // Komentari jika ingin mematikan pendaftaran dari luar

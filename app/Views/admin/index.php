@@ -37,10 +37,9 @@
                 <div class="col-md-6 text-right">
                     <a href="<?= base_url('admin'); ?>" class="btn btn-secondary btn-sm">Semua Role</a>
                     <a href="<?= base_url('admin?role=admin'); ?>" class="btn btn-secondary btn-sm">Admin</a>
-                    <a href="<?= base_url('admin?role=panitia'); ?>" class="btn btn-secondary btn-sm">Panitia</a>
                     <a href="<?= base_url('admin?role=berqurban'); ?>" class="btn btn-secondary btn-sm">Berqurban</a>
-                    <a href="<?= base_url('admin?role=warga'); ?>" class="btn btn-secondary btn-sm">Warga</a>
-                </div>
+                    <a href="<?= base_url('admin?role=user'); ?>" class="btn btn-secondary btn-sm">Warga</a>
+                    </div>
             </div>
 
             <div class="table-responsive">
@@ -56,14 +55,14 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php $i = 1 + (isset($_GET['page']) ? ($_GET['page'] - 1) * 20 : 0); // Menyesuaikan nomor urut jika ada paginasi ?>
+                        <?php $i = 1 + (isset($_GET['page']) ? ($_GET['page'] - 1) * 20 : 0); ?>
                         <?php foreach($users as $user) : ?>
                             <tr>
                                 <td><?= $i++; ?></td>
                                 <td><?= $user->username; ?></td>
                                 <td><?= $user->email; ?></td>
                                 <td>
-                                    <span class="badge badge-<?= ($user->name == 'admin') ? 'danger' : (($user->name == 'panitia') ? 'info' : (($user->name == 'berqurban') ? 'success' : 'warning')); ?>">
+                                    <span class="badge badge-<?= ($user->name == 'admin') ? 'danger' : (($user->name == 'berqurban') ? 'success' : 'warning'); ?>">
                                         <?= $user->name; ?>
                                     </span>
                                 </td>
@@ -74,13 +73,12 @@
                                 </td>
                                 <td>
                                     <a href="<?= base_url('admin/' . $user->userid); ?>" class="btn btn-info btn-sm">Detail</a>
-                                    </td>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
-            <?php // echo $pager->links('default', 'bootstrap_full'); // Contoh jika menggunakan paginasi ?>
         </div>
     </div>
 </div>

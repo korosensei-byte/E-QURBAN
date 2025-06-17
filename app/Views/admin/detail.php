@@ -2,12 +2,7 @@
 
 <?= $this->section('page-content'); ?>
 <div class="container-fluid">
-    <!-- Page Heading -->
-    <h1 class="h3 mb-4 text-gray-800">Detail Warga</h1>
-
-    <?php 
-        // d($user); 
-    ?>
+    <h1 class="h3 mb-4 text-gray-800">Detail User</h1>
 
     <div class="row">
         <div class="col-lg-8">
@@ -23,12 +18,14 @@
                                     <h4><?= $user->username; ?></h4>
                                 </li>
                                 <?php if($user->fullname) : ?>
-                                 <li class="list-group-item"><?= $user->fullname; ?></li>
+                                <li class="list-group-item"><?= $user->fullname; ?></li>
                                 <?php endif; ?>
 
                                 <li class="list-group-item"><?= $user->email; ?></li>
                                 <li class="list-group-item">
-                                    <span class="badge badge-<?= ($user->name == 'admin') ? 'success' : 'warning'; ?>"><?= $user->name; ?></span>
+                                    <span class="badge badge-<?= ($user->name == 'admin') ? 'danger' : (($user->name == 'berqurban') ? 'success' : 'warning'); ?>">
+                                        <?= $user->name; ?>
+                                    </span>
                                 </li>
                                 <li class="list-group-item">
                                     <small>
@@ -36,7 +33,6 @@
                                     </small>
                                 </li>
                             </ul>
-                            
                         </div>
                     </div>
                 </div>
@@ -44,4 +40,4 @@
         </div>
     </div>
 </div>
-<?= $this->endSection(); ?>  
+<?= $this->endSection(); ?>

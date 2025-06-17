@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-use App\Models\TransactionModel; // Import model transaksi
+use App\Models\TransactionModel;
 use CodeIgniter\Controller;
 
 class Financial extends BaseController
@@ -16,14 +16,14 @@ class Financial extends BaseController
 
     public function index()
     {
-        if (! in_groups('admin') && ! in_groups('panitia')) {
+        // Hanya admin yang bisa mengakses rekapan keuangan
+        if (! in_groups('admin')) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         }
 
         $data['title'] = 'Rekapan Keuangan';
         $data['transactions'] = $this->transactionModel->findAll();
 
-        // Hitung total pemasukan dan pengeluaran
         $totalIncome = 0;
         $totalExpense = 0;
         foreach ($data['transactions'] as $transaction) {
@@ -42,7 +42,8 @@ class Financial extends BaseController
 
     public function add()
     {
-        if (! in_groups('admin') && ! in_groups('panitia')) {
+        // Hanya admin yang bisa menambahkan transaksi
+        if (! in_groups('admin')) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -52,7 +53,8 @@ class Financial extends BaseController
 
     public function save()
     {
-        if (! in_groups('admin') && ! in_groups('panitia')) {
+        // Hanya admin yang bisa menyimpan transaksi
+        if (! in_groups('admin')) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -60,7 +62,6 @@ class Financial extends BaseController
             'transaction_type' => 'required|in_list[in,out]',
             'amount'           => 'required|numeric|greater_than[0]',
             'description'      => 'required|max_length[255]',
-            // 'related_user_id' => 'permit_empty|integer', // Optional, will be handled by form
         ])) {
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
@@ -70,7 +71,7 @@ class Financial extends BaseController
             'amount'           => $this->request->getPost('amount'),
             'description'      => $this->request->getPost('description'),
             'related_user_id'  => $this->request->getPost('related_user_id') ?: null,
-            'created_at'       => date('Y-m-d H:i:s'), // Set current timestamp
+            'created_at'       => date('Y-m-d H:i:s'),
         ]);
 
         return redirect()->to('/financial')->with('message', 'Transaksi berhasil ditambahkan!');

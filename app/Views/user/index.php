@@ -25,11 +25,36 @@
                             </ul>
                             <div class="mt-3">
                                 <a href="<?= base_url('user/myqrcard'); ?>" class="btn btn-primary btn-sm">Lihat Kartu Pengambilan Daging</a>
+                                <a href="<?= base_url('user/registerqurban'); ?>" class="btn btn-success btn-sm ml-2">Daftar Qurban</a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <?php if (!empty($user_qurbans)) : ?>
+                <div class="card shadow mb-4 mt-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Riwayat Qurban Saya</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <?php foreach ($user_qurbans as $qurban) : ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Hewan: <?= ucfirst($qurban['animal_type']); ?>
+                                    <?php if ($qurban['animal_type'] === 'sapi') : ?>
+                                        (Bagian: <?= $qurban['share_number']; ?> - Grup: <?= $qurban['qurban_group']; ?>)
+                                    <?php endif; ?>
+                                    <span class="badge badge-<?= $qurban['payment_status'] === 'paid' ? 'success' : 'warning'; ?> badge-pill">
+                                        <?= ucfirst($qurban['payment_status']); ?> (Rp <?= number_format($qurban['amount_paid'], 0, ',', '.'); ?>)
+                                    </span>
+                                    <small class="text-muted">Terdaftar: <?= date('d M Y', strtotime($qurban['created_at'])); ?></small>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            <?php endif; ?>
 
             <?php if (!empty($user_distributions)) : ?>
                 <div class="card shadow mb-4 mt-4">

@@ -11,7 +11,7 @@ class QurbanParticipantModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array'; // Or 'object'
     protected $useSoftDeletes   = false;
-    protected $allowedFields    = ['user_id', 'animal_type', 'share_number', 'payment_status', 'created_at', 'updated_at'];
+    protected $allowedFields    = ['user_id', 'animal_type', 'share_number', 'payment_status', 'qurban_group', 'amount_paid', 'created_at', 'updated_at']; // Tambahkan qurban_group dan amount_paid
 
     // Dates
     protected $useTimestamps = true;
@@ -20,8 +20,14 @@ class QurbanParticipantModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = '';
 
-    // Validation
-    protected $validationRules      = [];
+    // Validation (tambahkan validasi jika diperlukan di sini)
+    protected $validationRules = [
+        'user_id'        => 'required|integer|is_not_unique[users.id]',
+        'animal_type'    => 'required|in_list[kambing,sapi]',
+        'share_number'   => 'permit_empty|integer|less_than_equal_to[7]|greater_than[0]',
+        'payment_status' => 'required|in_list[paid,unpaid]',
+        'amount_paid'    => 'permit_empty|numeric', // allow empty or numeric
+    ];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;

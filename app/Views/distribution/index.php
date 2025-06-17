@@ -17,10 +17,32 @@
 
     <div class="row">
         <div class="col-lg-12">
-            <a href="<?= base_url('distribution/add'); ?>" class="btn btn-primary mb-3">Tambah Catatan Pembagian</a>
-            <a href="<?= base_url('distribution/scan'); ?>" class="btn btn-info mb-3">Scan QR Code</a>
+            <a href="<?= base_url('distribution/add'); ?>" class="btn btn-primary mb-3">Tambah Catatan Pembagian Manual</a>
+            <a href="<?= base_url('distribution/scan'); ?>" class="btn btn-info mb-3">Scan QR Code Pengambilan</a>
 
-            <div class="table-responsive">
+            <div class="card shadow mb-4 mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Otomatisasi Pembagian Daging</h6>
+                </div>
+                <div class="card-body">
+                    <form action="<?= base_url('distribution/autoDistributeMeat'); ?>" method="post">
+                        <?= csrf_field(); ?>
+                        <div class="form-group">
+                            <label for="total_meat_weight">Total Berat Daging Hewan (Kg)</label>
+                            <input type="number" step="0.01" class="form-control" id="total_meat_weight" name="total_meat_weight" placeholder="Contoh: 98.50" required>
+                            <small class="form-text text-muted">Masukkan total berat daging bersih dari satu hewan qurban (misal, satu sapi).</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="qurban_animal_id">ID Hewan Qurban Terkait (Opsional, untuk pelacakan)</label>
+                            <input type="text" class="form-control" id="qurban_animal_id" name="qurban_animal_id" placeholder="Misal: SAPI_A_2024">
+                            <small class="form-text text-muted">ID ini bisa Anda buat manual atau berasal dari pencatatan hewan qurban yang terpisah.</small>
+                        </div>
+                        <button type="submit" class="btn btn-success">Mulai Pembagian Otomatis</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-4">
                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
@@ -52,6 +74,8 @@
                                 <td>
                                     <?php if ($dist['qr_code']) : ?>
                                         <img src="<?= base_url('distribution/generateqrcode/' . $dist['qr_code']); ?>" alt="QR Code" width="50">
+                                        <br>
+                                        <small><?= $dist['qr_code']; ?></small>
                                     <?php else : ?>
                                         N/A
                                     <?php endif; ?>

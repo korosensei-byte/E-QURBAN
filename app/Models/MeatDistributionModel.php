@@ -11,7 +11,7 @@ class MeatDistributionModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array'; // Or 'object'
     protected $useSoftDeletes   = false;
-    protected $allowedFields    = ['recipient_user_id', 'distribution_type', 'meat_weight_kg', 'distribution_date', 'status', 'qr_code', 'collected_at', 'collected_by_user_id'];
+    protected $allowedFields    = ['recipient_user_id', 'distribution_type', 'meat_weight_kg', 'distribution_date', 'status', 'qr_code', 'collected_at', 'collected_by_user_id', 'qurban_animal_id']; // Tambahkan qurban_animal_id
 
     // Dates
     protected $useTimestamps = true;
@@ -20,7 +20,7 @@ class MeatDistributionModel extends Model
     protected $updatedField  = ''; // No updated_at for this table
     protected $deletedField  = '';
 
-    // Validation
+    // Validation (tambahkan validasi jika diperlukan di sini)
     protected $validationRules      = [];
     protected $validationMessages   = [];
     protected $skipValidation       = false;

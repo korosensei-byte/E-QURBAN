@@ -37,6 +37,7 @@
                 <div class="col-md-6 text-right">
                     <a href="<?= base_url('admin'); ?>" class="btn btn-secondary btn-sm">Semua Role</a>
                     <a href="<?= base_url('admin?role=admin'); ?>" class="btn btn-secondary btn-sm">Admin</a>
+                    <a href="<?= base_url('admin?role=panitia'); ?>" class="btn btn-secondary btn-sm">Panitia</a>
                     <a href="<?= base_url('admin?role=berqurban'); ?>" class="btn btn-secondary btn-sm">Berqurban</a>
                     <a href="<?= base_url('admin?role=user'); ?>" class="btn btn-secondary btn-sm">Warga</a>
                     </div>
@@ -62,9 +63,15 @@
                                 <td><?= $user->username; ?></td>
                                 <td><?= $user->email; ?></td>
                                 <td>
-                                    <span class="badge badge-<?= ($user->name == 'admin') ? 'danger' : (($user->name == 'berqurban') ? 'success' : 'warning'); ?>">
-                                        <?= $user->name; ?>
-                                    </span>
+                                    <span class="badge badge-<?php
+    if ($user->name == 'admin') {
+        echo 'success';
+    } elseif ($user->name == 'panitia') {
+        echo 'info'; // or 'primary', 'dark', etc.
+    } else {
+        echo 'warning';
+    }
+?>"><?= $user->name; ?></span>
                                 </td>
                                 <td>
                                     <span class="badge badge-<?= ($user->active == 1) ? 'success' : 'secondary'; ?>">

@@ -10,16 +10,11 @@ use CodeIgniter\Router\RouteCollection;
 // $routes->get('home/(:any)', 'Home::$1');
 // End Tahap Develop
 
-// $routes->get('/', 'User::index', ['filter' => 'login']); // Pastikan user harus login untuk ke halaman utama
-// $routes->get('/admin', 'Admin::index', ['filter' => 'role:admin']);
-// $routes->get('/admin/index', 'Admin::index', ['filter' => 'role:admin']);
-// $routes->get('/admin/(:num)', 'Admin::detail/$1', ['filter' => 'role:admin']);
+$routes->get('/', 'User::index', ['filter' => 'login']); // Pastikan user harus login untuk ke halaman utama
+$routes->get('/admin', 'Admin::index', ['filter' => 'role:admin']);
+$routes->get('/admin/index', 'Admin::index', ['filter' => 'role:admin']);
+$routes->get('/admin/(:num)', 'Admin::detail/$1', ['filter' => 'role:admin']);
 
-$routes->group('admin', ['filter' => 'role:admin'], function($routes) {
-    $routes->get('/', 'Admin::index');
-    $routes->get('index', 'Admin::index');
-    $routes->get('(:num)', 'Admin::detail/$1');
-});
 
 // Rute untuk Keuangan
 $routes->group('financial', ['filter' => 'role:admin,panitia'], function($routes) {
@@ -53,5 +48,5 @@ $routes->group('user', ['filter' => 'login'], function($routes) {
 });
 
 // Rute default Myth:Auth
-$routes->addRedirect('login', 'login');
+// $routes->addRedirect('login', 'login');
 // $routes->addRedirect('register', 'register');

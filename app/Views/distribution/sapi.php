@@ -3,8 +3,9 @@
 <?= $this->section('page-content'); ?>
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Manajemen Distribusi Daging Sapi</h1>
-    <a href="<?= base_url('distribution'); ?>" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i> Kembali</a>
-    
+    <a href="<?= base_url('distribution'); ?>" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i>
+        Kembali</a>
+
     <!-- FORM UNTUK DISTRIBUSI DAGING SAPI -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
@@ -15,10 +16,13 @@
                 <?= csrf_field(); ?>
                 <div class="form-group">
                     <label for="total_meat_weight_sapi">Total Berat Daging Sapi (Kg)</label>
-                    <input type="number" step="0.01" class="form-control" name="total_meat_weight_sapi" placeholder="Contoh: 250.75" required>
-                    <small class="form-text text-muted">Masukkan total berat semua daging sapi yang tersedia untuk didistribusikan hari ini.</small>
+                    <input type="number" step="0.01" class="form-control" name="total_meat_weight_sapi"
+                        placeholder="Contoh: 250.75" required>
+                    <small class="form-text text-muted">Masukkan total berat semua daging sapi yang tersedia untuk
+                        didistribusikan hari ini.</small>
                 </div>
-                <button type="submit" class="btn btn-success" onclick="return confirm('Anda yakin ingin mendistribusikan total daging sapi ini?')">
+                <button type="submit" class="btn btn-success"
+                    onclick="return confirm('Anda yakin ingin mendistribusikan total daging sapi ini?')">
                     <i class="fas fa-divide"></i> Alokasikan Daging Sapi
                 </button>
             </form>
@@ -26,11 +30,11 @@
     </div>
 
     <hr>
-    
+
     <h4 class="mt-4 mb-3">Riwayat Alokasi Daging Sapi</h4>
     <div class="table-responsive">
         <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-             <thead>
+            <thead>
                 <tr>
                     <th>#</th>
                     <th>Penerima</th>
@@ -43,32 +47,47 @@
             </thead>
             <tbody>
                 <?php $i = 1; ?>
-                <?php if(!empty($distributions)): ?>
-                    <?php foreach ($distributions as $dist) : ?>
+                <?php if (!empty($distributions)): ?>
+                    <?php foreach ($distributions as $dist): ?>
                         <tr>
                             <td><?= $i++; ?></td>
                             <td><?= esc($dist['username'] ?? 'User Dihapus'); ?></td>
                             <td>
                                 <?php
-                                    // Menentukan warna badge berdasarkan tipe distribusi
-                                    $badgeClass = 'badge-light';
-                                    if ($dist['distribution_type'] === 'berqurban') $badgeClass = 'badge-success';
-                                    elseif ($dist['distribution_type'] === 'panitia') $badgeClass = 'badge-primary';
-                                    elseif ($dist['distribution_type'] === 'warga') $badgeClass = 'badge-info';
+                                // Menentukan warna badge berdasarkan tipe distribusi
+                                $badgeClass = 'badge-light';
+                                if ($dist['distribution_type'] === 'berqurban')
+                                    $badgeClass = 'badge-success';
+                                elseif ($dist['distribution_type'] === 'panitia')
+                                    $badgeClass = 'badge-primary';
+                                elseif ($dist['distribution_type'] === 'warga')
+                                    $badgeClass = 'badge-info';
                                 ?>
-                                <span class="badge <?= $badgeClass; ?>"><?= esc($dist['distribution_type'] === 'berqurban' ? 'Pekurban' : ucfirst($dist['distribution_type'])); ?></span>
+                                <span
+                                    class="badge <?= $badgeClass; ?>"><?= esc($dist['distribution_type'] === 'berqurban' ? 'Pekurban' : ucfirst($dist['distribution_type'])); ?></span>
                             </td>
                             <td><?= esc($dist['meat_weight']); ?></td>
                             <td>
-                                <?php if (!empty($dist['qr_code'])) : ?>
-                                    <img src="<?= base_url('distribution/qrimage/' . urlencode($dist['qr_code'])) ?>" alt="QR Code" width="80">
-                                <?php else : ?>
+                                <?php if (!empty($dist['qr_code'])): ?>
+                                    <img src="<?= base_url('distribution/qrimage/' . urlencode($dist['qr_code'])) ?>" alt="QR Code"
+                                        width="80">
+                                <?php else: ?>
                                     -
                                 <?php endif; ?>
                             </td>
                             <td><?= date('d M Y H:i', strtotime($dist['distribution_date'])); ?></td>
                             <td>
-                                <span class="badge badge-<?= $dist['status'] === 'distributed' ? 'success' : 'warning'; ?>"><?= ucfirst(esc($dist['status'])); ?></span>
+                                <?php if ($dist['status'] === 'pending'): ?>
+                                    <a href="<?= base_url('distribution/kambing/markasdistributed/' . $dist['id']) ?>"
+                                        class="btn btn-sm btn-warning"
+                                        onclick="return confirm('Anda yakin ingin mengubah status menjadi sudah diambil?')">
+                                        Pending
+                                    </a>
+                                <?php else: ?>
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check-circle"></i> <?= ucfirst(esc($dist['status'])); ?>
+                                    </span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

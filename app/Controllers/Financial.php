@@ -22,43 +22,33 @@ class Financial extends BaseController
 
 public function index()
 {
-    // Hanya admin yang bisa mengakses rekapan keuangan
-    if (! in_groups('admin')) {
+    // Hanya admin yang bisa mengakses
+    if (!in_groups(['admin', 'panitia'])) {
         return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
     }
 
-    $data['title'] = 'Rekapan Keuangan';
+    $data['title'] = 'Rekapan Keuangan Administrasi';
+
+    // Ambil SEMUA data pengeluaran dari tabel transactions
     $data['transactions'] = $this->transactionModel->findAll();
 
-    $totalIncome = 0;
-    $totalExpense = 0;
-    $totalAdminFee = 0; 
+    // Hitung Total Dana Administrasi dari tabel qurban_participants (yang sudah lunas)
+    $totalAdminFeeResult = $this->qurbanParticipantModel
+        ->where('payment_status', 'paid')
+        ->selectSum('amount_paid_admin', 'total_admin')
+        ->first();
+    $totalAdminFee = $totalAdminFeeResult['total_admin'] ?? 0;
 
-    foreach ($data['transactions'] as $transaction) {
-        if ($transaction['transaction_type'] === 'in') {
-            $totalIncome += $transaction['amount'];
-            if (strpos($transaction['description'], 'Administrasi') !== false) {
-                $totalAdminFee += $transaction['amount'];
-            }
-        } else {
-            $totalExpense += $transaction['amount'];
-        }
-    }
-    $data['totalIncome'] = $totalIncome;
-    $data['totalExpense'] = $totalExpense;
-    $data['balance'] = $totalIncome - $totalExpense;
+    // Hitung Total Pengeluaran dari tabel transactions
+    $totalExpenseResult = $this->transactionModel
+        ->selectSum('amount', 'total_expense')
+        ->first();
+    $totalExpense = $totalExpenseResult['total_expense'] ?? 0;
+
+    // Kirim data ke view
     $data['totalAdminFee'] = $totalAdminFee;
-
-    // Menghitung jumlah kambing yang statusnya sudah lunas
-    $data['totalKambing'] = $this->qurbanParticipantModel->where(['animal_type' => 'kambing', 'payment_status' => 'paid'])->countAllResults();
-
-    // Hitung jumlah sapi (berdasarkan grup unik yang sudah lunas)
-    $data['totalSapi'] = $this->qurbanParticipantModel->where(['animal_type' => 'sapi', 'payment_status' => 'paid'])->groupBy('qurban_group')->countAllResults();
-    
-    // --- TAMBAHAN BARU: Definisikan Harga Hewan ---
-    $data['hargaKambing'] = 2700000; // Harga sesuai controller Qurban
-    $data['hargaSapi'] = 3000000;    // Harga iuran per orang sesuai controller Qurban
-    // --- AKHIR TAMBAHAN BARU ---
+    $data['totalExpense'] = $totalExpense;
+    $data['balance'] = $totalAdminFee - $totalExpense; // Saldo adalah Dana Admin - Pengeluaran
 
     return view('financial/index', $data);
 }
@@ -66,7 +56,8 @@ public function index()
     public function add()
     {
         // Hanya admin yang bisa menambahkan transaksi
-        if (! in_groups('admin')) {
+        // if (! in_groups('admin')) {
+        if (! in_groups(['admin', 'panitia'])) {
             return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -75,28 +66,46 @@ public function index()
     }
 
     public function save()
-    {
-        // Hanya admin yang bisa menyimpan transaksi
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        if (! $this->validate([
-            'transaction_type' => 'required|in_list[in,out]',
-            'amount'           => 'required|numeric|greater_than[0]',
-            'description'      => 'required|max_length[255]',
-        ])) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        $this->transactionModel->save([
-            'transaction_type' => $this->request->getPost('transaction_type'),
-            'amount'           => $this->request->getPost('amount'),
-            'description'      => $this->request->getPost('description'),
-            'related_user_id'  => $this->request->getPost('related_user_id') ?: null,
-            'created_at'       => date('Y-m-d H:i:s'),
-        ]);
-
-        return redirect()->to('/financial')->with('message', 'Transaksi berhasil ditambahkan!');
+{
+    // Hanya admin yang bisa menyimpan transaksi
+    // if (! in_groups('admin')) {
+    if (! in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
     }
+
+    // Validasi sekarang tidak memerlukan 'transaction_type'
+    if (! $this->validate([
+        'amount'           => 'required|numeric|greater_than[0]',
+        'description'      => 'required|max_length[255]',
+    ])) {
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+    }
+
+    // Menyimpan data pengeluaran. Tidak ada lagi 'transaction_type'.
+    $this->transactionModel->save([
+        'amount'           => $this->request->getPost('amount'),
+        'description'      => $this->request->getPost('description'),
+        'related_user_id'  => user()->id, // Mencatat siapa admin yg input
+        'created_at'       => date('Y-m-d H:i:s'),
+    ]);
+
+    return redirect()->to('/financial')->with('message', 'Data pengeluaran berhasil ditambahkan!');
+}
+
+    public function delete($id = null)
+{
+    // 1. Pastikan hanya admin yang bisa mengakses
+    if (!in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+    }
+
+    // 2. Gunakan model transaksi untuk menghapus data berdasarkan ID
+    $this->transactionModel->delete($id);
+
+    // 3. Buat pesan sukses untuk ditampilkan
+    session()->setFlashdata('message', 'Transaksi berhasil dihapus.');
+
+    // 4. Arahkan kembali pengguna ke halaman rekapan keuangan
+    return redirect()->to('/financial');
+}
 }

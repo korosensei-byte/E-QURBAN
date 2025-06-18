@@ -10,7 +10,7 @@
                 <?php foreach ($user_distributions as $dist) : ?>
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Kartu Pengambilan Daging - <?= ucfirst($dist['distribution_type']); ?> (<?= $dist['meat_weight_kg']; ?> kg)</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Kartu Daging - <?= ucfirst($dist['animal_type']); ?> (<?= $dist['meat_weight']; ?> kg)</h6>
                     </div>
                     <div class="card-body text-center">
                         <?php if ($dist['qr_code']) : ?>

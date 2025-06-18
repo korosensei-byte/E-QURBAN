@@ -11,7 +11,8 @@ class QurbanParticipantModel extends Model
     protected $useAutoIncrement = true;
     protected $returnType       = 'array'; // Or 'object'
     protected $useSoftDeletes   = false;
-    protected $allowedFields    = ['user_id', 'animal_type', 'share_number', 'payment_status', 'qurban_group', 'amount_paid', 'created_at', 'updated_at']; // Tambahkan qurban_group dan amount_paid
+    // protected $allowedFields    = ['user_id', 'animal_type', 'share_number', 'payment_status', 'qurban_group', 'amount_paid', 'created_at', 'updated_at']; // Tambahkan qurban_group dan amount_paid
+    protected $allowedFields    = ['user_id', 'animal_type', 'share_number', 'payment_status', 'qurban_group', 'amount_paid', 'amount_paid_admin', 'created_at', 'updated_at'];
 
     // Dates
     protected $useTimestamps = true;

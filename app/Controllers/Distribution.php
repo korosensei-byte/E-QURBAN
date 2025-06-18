@@ -2,9 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Models\MeatDistributionModel;
-use App\Models\MeatDistributionKambingModel; // Tambahkan ini
-use App\Models\MeatDistributionSapiModel;   // Tambahkan ini
+use App\Models\MeatDistributionKambingModel;
+use App\Models\MeatDistributionSapiModel;
 use App\Models\QurbanParticipantModel;
 use chillerlan\QRCode\{QRCode, QROptions};
 use CodeIgniter\I18n\Time;
@@ -13,19 +12,18 @@ use Myth\Auth\Models\UserModel;
 
 class Distribution extends BaseController
 {
-    protected $meatDistributionModel;
-    protected $kambingDistModel; // Tambahkan ini
-    protected $sapiDistModel;    // Tambahkan ini
+    protected $kambingDistModel;
+    protected $sapiDistModel;
     protected $userModel;
-    protected $qurbanParticipantModel;
+    protected
+        $qurbanParticipantModel;
     protected $groupModel;
     protected $db;
 
     public function __construct()
     {
-        $this->meatDistributionModel = new MeatDistributionModel();
-        $this->kambingDistModel = new MeatDistributionKambingModel(); // Tambahkan ini
-        $this->sapiDistModel = new MeatDistributionSapiModel();       // Tambahkan ini
+        $this->kambingDistModel = new MeatDistributionKambingModel();
+        $this->sapiDistModel = new MeatDistributionSapiModel();
         $this->userModel = new UserModel();
         $this->qurbanParticipantModel = new QurbanParticipantModel();
         $this->groupModel = new GroupModel();
@@ -47,10 +45,10 @@ class Distribution extends BaseController
             ->join('users', 'users.id = meat_distribution_kambing.recipient_user_id', 'left')
             ->orderBy('distribution_date', 'DESC')
             ->findAll();
-            
+
         return view('distribution/kambing', $data);
     }
-    
+
     // Menampilkan halaman khusus untuk mengelola daging sapi
     public function manageSapi()
     {
@@ -60,7 +58,7 @@ class Distribution extends BaseController
             ->join('users', 'users.id = meat_distribution_sapi.recipient_user_id', 'left')
             ->orderBy('distribution_date', 'DESC')
             ->findAll();
-            
+
         return view('distribution/sapi', $data);
     }
 
@@ -78,12 +76,16 @@ class Distribution extends BaseController
 
     private function _distributeMeat(string $animalType, float $totalMeatWeight)
     {
-        if (!in_groups(['admin', 'panitia'])) return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
-        if ($totalMeatWeight <= 0) return redirect()->back()->withInput()->with('error', 'Total berat daging harus lebih besar dari 0.');
+        if (!in_groups(['admin', 'panitia'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
+        }
+        if ($totalMeatWeight <= 0) {
+            return redirect()->back()->withInput()->with('error', 'Total berat daging harus lebih besar dari 0.');
+        }
 
         $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
         $animalPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
-        
+
         $this->db->transStart();
 
         $alreadyDistributed = $model->where('qurban_animal_id', $animalPoolId)->first();
@@ -120,15 +122,15 @@ class Distribution extends BaseController
                 $dataToInsert[] = $this->_prepareDistributionData($userId, $type, round($meatPerRecipient, 2), $distributionDate, $animalPoolId);
             }
         }
-        
+
         if (!empty($dataToInsert)) {
             $model->insertBatch($dataToInsert);
         }
-        
+
         $this->db->transComplete();
 
         if ($this->db->transStatus() === false) {
-             return redirect()->back()->with('error', 'Gagal menyimpan data distribusi.');
+            return redirect()->back()->with('error', 'Gagal menyimpan data distribusi.');
         }
 
         return redirect()->to('/distribution/' . $animalType)->with('message', "Pembagian daging dari pool '{$animalType}' berhasil dialokasikan!");
@@ -146,8 +148,7 @@ class Distribution extends BaseController
             'qurban_animal_id'  => $poolId,
         ];
     }
-    
-    // --- FUNGSI DENGAN PERBAIKAN ---
+
     private function _getEligiblePanitiaIds(): array
     {
         $panitiaGroup = $this->groupModel->where('name', 'panitia')->first();
@@ -160,53 +161,79 @@ class Distribution extends BaseController
             ->select('users.id')->findAll();
         $allPanitiaIds = array_column($allPanitiaResult, 'id');
 
-        // Cek kedua tabel distribusi untuk panitia yang sudah menerima
         $receivedFromKambing = $this->kambingDistModel->where('distribution_type', 'panitia')->select('recipient_user_id')->distinct()->findAll();
         $receivedFromSapi = $this->sapiDistModel->where('distribution_type', 'panitia')->select('recipient_user_id')->distinct()->findAll();
-        
+
         $receivedPanitiaIds = array_unique(array_merge(
             array_column($receivedFromKambing, 'recipient_user_id'),
             array_column($receivedFromSapi, 'recipient_user_id')
         ));
-        
+
         return array_diff($allPanitiaIds, $receivedPanitiaIds);
     }
-    // --- AKHIR PERBAIKAN ---
 
     private function _getEligibleRecipients(array $excludeUserIds = []): array
     {
         $eligiblePanitiaIds = $this->_getEligiblePanitiaIds();
-        
+
         $wargaGroup = $this->groupModel->where('name', 'user')->first();
         $wargaUserIds = [];
         if ($wargaGroup) {
             $wargaUsers = $this->userModel->join('auth_groups_users', 'auth_groups_users.user_id = users.id')->where('auth_groups_users.group_id', $wargaGroup->id)->select('users.id')->findAll();
             $wargaUserIds = array_column($wargaUsers, 'id');
         }
-        
+
         $allRecipientIds = array_unique(array_merge($wargaUserIds, $eligiblePanitiaIds));
-        
+
         return array_diff($allRecipientIds, $excludeUserIds);
+    }
+
+    public function generateQrImage($qrCodeData)
+    {
+        ob_start();
+
+        $options = new QROptions([
+            'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
+            'eccLevel'         => QRCode::ECC_L,
+            'scale'            => 5,
+            'imageTransparent' => false,
+        ]);
+
+        $decodedQrData = urldecode($qrCodeData);
+
+        (new QRCode($options))->render($decodedQrData);
+
+        $imageData = ob_get_contents();
+        ob_end_clean();
+
+        header('Content-Type: image/png');
+        header('Content-Length: ' . strlen($imageData));
+        header('Cache-Control: no-cache');
+        echo $imageData;
+
+        exit;
     }
 
     public function scanQrCode()
     {
-        if (! in_groups('admin', 'panitia')) return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        if (!in_groups('admin', 'panitia')) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
         $data['title'] = 'Scan QR Code Pengambilan Daging';
         return view('distribution/scan', $data);
     }
 
     public function verifyQrCode()
     {
-        if (! in_groups('admin', 'panitia')) return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        if (!in_groups('admin', 'panitia')) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        }
         $qrCodeInput = $this->request->getPost('qr_code_input');
-        
-        // Cek di tabel kambing dulu
+
         $distribution = $this->kambingDistModel->where('qr_code', $qrCodeInput)->first();
         $model = $this->kambingDistModel;
         $animalType = 'kambing';
 
-        // Jika tidak ketemu, cek di tabel sapi
         if (!$distribution) {
             $distribution = $this->sapiDistModel->where('qr_code', $qrCodeInput)->first();
             $model = $this->sapiDistModel;
@@ -223,10 +250,35 @@ class Distribution extends BaseController
                 'collected_by_user_id' => user()->id,
             ]);
             $recipient = $this->userModel->find($distribution['recipient_user_id']);
-            
+
             return redirect()->back()->with('message', 'QR Code valid! Daging (' . $animalType . ') berhasil diberikan kepada ' . $recipient->username . ' (' . $distribution['meat_weight'] . ' kg).');
         } else {
             return redirect()->back()->withInput()->with('error', 'QR Code tidak valid.');
         }
+    }
+    public function markAsDistributed($animalType, $id)
+    {
+        if (!in_groups(['admin', 'panitia'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+        }
+
+        $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+
+        $distribution = $model->find($id);
+
+        if (!$distribution || $distribution['status'] === 'distributed') {
+            return redirect()->to('/distribution/' . $animalType)->with('error', 'Data tidak ditemukan atau status sudah diambil.');
+        }
+
+        $model->update($id, [
+            'status'                 => 'distributed',
+            'collected_at'           => date('Y-m-d H:i:s'),
+            'collected_by_user_id'   => user()->id,
+        ]);
+
+        $recipient = $this->userModel->find($distribution['recipient_user_id']);
+        $recipientName = $recipient ? $recipient->username : 'Penerima';
+
+        return redirect()->to('/distribution/' . $animalType)->with('message', 'Status untuk ' . $recipientName . ' berhasil diubah menjadi "Distributed".');
     }
 }

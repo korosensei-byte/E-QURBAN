@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>WPU Login</title>
+    <!-- <title>WPU Login</title> -->
 
     <!-- Custom fonts for this template-->
     <link href="<?= base_url(); ?>vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">

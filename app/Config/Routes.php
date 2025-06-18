@@ -18,10 +18,12 @@ $routes->post('/admin/updateUserRoles/(:num)', 'Admin::updateUserRoles/$1', ['fi
 
 
 // Rute untuk Keuangan
-$routes->group('financial', ['filter' => 'role:admin'], function($routes) {
+// $routes->group('financial', ['filter' => 'role:admin'], function($routes) {
+$routes->group('financial', ['filter' => 'role:admin,panitia'], function($routes) {
     $routes->get('/', 'Financial::index');
     $routes->get('add', 'Financial::add');
     $routes->post('save', 'Financial::save');
+    $routes->get('delete/(:num)', 'Financial::delete/$1');
 });
 
 // Rute untuk Pendataan Qurban
@@ -31,11 +33,15 @@ $routes->group('financial', ['filter' => 'role:admin'], function($routes) {
 //     $routes->post('save', 'Qurban::save');
 // });
 
-$routes->group('qurban', ['filter' => 'role:admin'], function($routes) {
-    $routes->get('/', 'Qurban::index');
+// $routes->group('qurban', ['filter' => 'role:admin'], function($routes) {
+// $routes->group('qurban', ['filter' => 'role:admin,panitia'], function($routes) {
+$routes->group('distribution', ['filter' => 'role:admin,panitia'], function($routes) {
+    // $routes->get('/', 'Qurban::index');
+    $routes->get('/', 'Distribution::index');
     $routes->get('add', 'Qurban::add');
     $routes->post('save', 'Qurban::save');
     $routes->get('markaspaid/(:num)', 'Qurban::markAsPaid/$1'); // Tambahkan rute ini
+    $routes->get('delete/(:num)', 'Qurban::delete/$1');
 });
 
 // Rute untuk Pembagian Daging
@@ -43,29 +49,18 @@ $routes->group('distribution', ['filter' => 'role:admin,panitia'], function($rou
     $routes->get('/', 'Distribution::index');
     $routes->get('add', 'Distribution::add');
     $routes->post('save', 'Distribution::save');
-    // $routes->post('autodistributemeat', 'Distribution::autoDistributeMeat'); // Tambahkan ini
-
-        // Rute baru untuk halaman khusus kambing
     $routes->get('kambing', 'Distribution::manageKambing');
     $routes->post('kambing/distribute', 'Distribution::distributeKambing');
-
-    // Rute baru untuk halaman khusus sapi
     $routes->get('sapi', 'Distribution::manageSapi');
     $routes->post('sapi/distribute', 'Distribution::distributeSapi');
-
     $routes->get('scan', 'Distribution::scanQrCode');
     $routes->post('verifyqrcode', 'Distribution::verifyQrCode');
-
-    $routes->get('qrimage/(:any)', 'Distribution::generateQrImage/$1');
-
-
-    // $routes->get('generateqrcode/(:any)', 'Distribution::generateQrCode/$1'); // Untuk menampilkan QR code
-
-    // $routes->post('distributebygroup', 'Distribution::distributeByGroup');
-
-    // $routes->post('distributeKambing', 'Distribution::distributeKambing');
-    // $routes->post('distributeSapi', 'Distribution::distributeSapi');
+    $routes->get('kambing/markasdistributed/(:num)', 'Distribution::markAsDistributed/kambing/$1');
+    $routes->get('sapi/markasdistributed/(:num)', 'Distribution::markAsDistributed/sapi/$1');
 });
+// Rute untuk generate gambar QR (TIDAK PERLU FILTER, JADIKAN PUBLIK)
+$routes->get('distribution/qrimage/(:any)', 'Distribution::generateQrImage/$1');
+// $routes->get('qrimage/(:any)', 'Distribution::generateQrImage/$1');
 
 // Rute untuk User (My Profile dan Kartu QR)
 // $routes->group('user', ['filter' => 'login'], function($routes) {
@@ -81,6 +76,8 @@ $routes->group('user', ['filter' => 'login'], function($routes) {
     $routes->get('registerqurban', 'User::registerQurban'); // Tambahkan rute ini
     $routes->post('saveregisterqurban', 'User::saveRegisterQurban'); // Tambahkan rute ini
 });
+
+$routes->get('/panitia', 'Panitia::index', ['filter' => 'role:admin,panitia']);
 
 // Rute default Myth:Auth
 // $routes->addRedirect('login', 'login');

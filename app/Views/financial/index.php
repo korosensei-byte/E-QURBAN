@@ -16,100 +16,85 @@
     <?php endif; ?>
 
     <div class="row">
-        <div class="col-lg-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Ringkasan Keuangan</h6>
-                </div>
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
-                    <p>Total Pemasukan: <strong>Rp <?= number_format($totalIncome, 0, ',', '.'); ?></strong></p>
-                    <p>Total Pengeluaran: <strong>Rp <?= number_format($totalExpense, 0, ',', '.'); ?></strong></p>
-                    <p>Saldo Kas: <strong>Rp <?= number_format($balance, 0, ',', '.'); ?></strong></p>
-                    <hr>
-
-
-                    <div class="row">
-                        <div class="col-md-6  p-3">
-                            <!-- Kolom Kiri -->
-                            <h6>Rincian Qurban:</h6>
-                            <ul class="list-unstyled">
-                                <li>Jumlah Kambing Terbeli: <strong><?= $totalKambing; ?> ekor</strong></li>
-                                <li>Jumlah Sapi Terbeli: <strong><?= $totalSapi; ?> ekor</strong></li>
-                                <li>Total Uang Administrasi: <strong>Rp
-                                        <?= number_format($totalAdminFee, 0, ',', '.'); ?></strong></li>
-                                <br>
-
-                            </ul>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Dana Administrasi</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Rp <?= number_format($totalAdminFee, 0, ',', '.'); ?></div>
                         </div>
-                        <div class="col-md-6 p-3">
-                            <!-- Kolom Kanan -->
-                            <h6>Keterangan Harga Qurban:</h6>
-
-                            <ul class="list-unstyled">
-
-                                <li>Harga per Kambing: <strong>Rp
-                                        <?= number_format($hargaKambing, 0, ',', '.'); ?></strong>
-                                </li>
-                                <li>Harga per Iuran Sapi (7 Orang): <strong>Rp
-                                        <?= number_format($hargaSapi, 0, ',', '.'); ?></strong>
-                                </li>
-                            </ul>
-                        </div>
+                        <div class="col-auto"><i class="fas fa-arrow-down fa-2x text-gray-300"></i></div>
                     </div>
-
-                    <a href="<?= base_url('financial/add'); ?>" class="btn btn-primary btn-sm mt-2">Tambah Transaksi
-                        Baru</a>
                 </div>
             </div>
+        </div>
 
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Daftar Transaksi</h6>
-                </div>
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Tipe</th>
-                                    <th>Jumlah</th>
-                                    <th>Deskripsi</th>
-                                    <th>User Terkait</th>
-                                    <th>Tanggal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $i = 1; ?>
-                                <?php foreach ($transactions as $transaction): ?>
-                                    <tr>
-                                        <td><?= $i++; ?></td>
-                                        <td>
-                                            <span
-                                                class="badge badge-<?= $transaction['transaction_type'] === 'in' ? 'success' : 'danger'; ?>">
-                                                <?= ucfirst($transaction['transaction_type']); ?>
-                                            </span>
-                                        </td>
-                                        <td>Rp <?= number_format($transaction['amount'], 0, ',', '.'); ?></td>
-                                        <td><?= $transaction['description']; ?></td>
-                                        <td>
-                                            <?php if ($transaction['related_user_id']): ?>
-                                                <?php
-                                                $userModel = new \Myth\Auth\Models\UserModel();
-                                                $user = $userModel->find($transaction['related_user_id']);
-                                                echo $user ? $user->username : 'N/A';
-                                                ?>
-                                            <?php else: ?>
-                                                -
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?= date('d M Y H:i', strtotime($transaction['created_at'])); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Pengeluaran</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Rp <?= number_format($totalExpense, 0, ',', '.'); ?></div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-arrow-up fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Sisa Dana Administrasi</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Rp <?= number_format($balance, 0, ',', '.'); ?></div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-wallet fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Daftar Transaksi Pengeluaran</h6>
+            <a href="<?= base_url('financial/add'); ?>" class="btn btn-primary btn-sm">Tambah Pengeluaran</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Jumlah</th>
+                            <th>Deskripsi</th>
+                            <th>Dicatat Oleh</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $i = 1; ?>
+                        <?php foreach ($transactions as $transaction): ?>
+                            <tr>
+                                <td><?= $i++; ?></td>
+                                <td>Rp <?= number_format($transaction['amount'], 0, ',', '.'); ?></td>
+                                <td><?= esc($transaction['description']); ?></td>
+                                <td>
+                                    <?php
+                                        $userModel = new \Myth\Auth\Models\UserModel();
+                                        $user = $userModel->find($transaction['related_user_id']);
+                                        echo $user ? esc($user->username) : 'N/A';
+                                    ?>
+                                </td>
+                                <td><?= date('d M Y H:i', strtotime($transaction['created_at'])); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

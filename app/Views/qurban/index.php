@@ -26,8 +26,8 @@
                             <th>Nama Pengguna</th>
                             <th>Email</th>
                             <th>Jenis Hewan</th>
-                            <th>Jumlah Bagian (Sapi)</th>
-                            <th>Grup Qurban</th>
+                            <th>Bagian (Sapi) / Tag (Kambing)</th>
+                            <th>Grup Qurban (Sapi)</th>
                             <th>Status Pembayaran</th>
                             <th>Jumlah Dibayar</th>
                             <th>Aksi</th>
@@ -41,7 +41,7 @@
                                 <td><?= $participant['username']; ?></td>
                                 <td><?= $participant['email']; ?></td>
                                 <td><?= ucfirst($participant['animal_type']); ?></td>
-                                <td><?= $participant['share_number'] ?: '-'; ?></td>
+                                <td><?= $participant['animal_type'] === 'sapi' ? $participant['share_number'] : esc($participant['animal_tag']); ?></td>
                                 <td><?= $participant['qurban_group'] ?: '-'; ?></td>
                                 <td>
                                     <span class="badge badge-<?= $participant['payment_status'] === 'paid' ? 'success' : 'warning'; ?>">

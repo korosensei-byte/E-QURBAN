@@ -9,31 +9,33 @@ class MeatDistributionModel extends Model
     protected $table            = 'meat_distribution';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
-    protected $returnType       = 'array'; // Or 'object'
+    protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
-    protected $allowedFields    = ['recipient_user_id', 'distribution_type', 'meat_weight_kg', 'distribution_date', 'status', 'qr_code', 'collected_at', 'collected_by_user_id', 'qurban_animal_id']; // Tambahkan qurban_animal_id
+    
+    // Sesuaikan dengan struktur tabel baru Anda
+    protected $allowedFields    = [
+        'recipient_user_id', 
+        'distribution_type', 
+        'meat_weight_kambing',
+        'meat_weight_sapi', 
+        'distribution_date', 
+        'status', 
+        'qr_code', 
+        'collected_at', 
+        'collected_by_user_id', 
+        'qurban_animal_id'
+    ];
 
-    // Dates
+    // Kode di bawah ini tidak perlu diubah
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
-    protected $createdField  = ''; // No created_at for this table
-    protected $updatedField  = ''; // No updated_at for this table
+    protected $createdField  = ''; 
+    protected $updatedField  = '';
     protected $deletedField  = '';
 
-    // Validation (tambahkan validasi jika diperlukan di sini)
     protected $validationRules      = [];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
-
-    // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert   = [];
-    protected $afterInsert    = [];
-    protected $beforeUpdate   = [];
-    protected $afterUpdate    = [];
-    protected $beforeFind     = [];
-    protected $afterFind      = [];
-    protected $beforeDelete   = [];
-    protected $afterDelete    = [];
 }

@@ -4,28 +4,23 @@ namespace App\Database\Migrations;
 
 use CodeIgniter\Database\Migration;
 
-class AddQurbanAnimalIdToMeatDistribution extends Migration
+class AddAnimalTagToQurbanParticipants extends Migration
 {
-    public function up(): void
+    public function up()
     {
-        $this->forge->addColumn('meat_distribution', [
-            'qurban_animal_id' => [ // This will link to a specific animal (e.g., Sapi A)
-                'type'       => 'INT',
-                'constraint' => 11,
-                'unsigned'   => true,
-                'null'       => true, // Null for general public distribution
-                'after'      => 'qr_code',
+        $this->forge->addColumn('qurban_participants', [
+            'animal_tag' => [
+                'type'       => 'VARCHAR',
+                'constraint' => '50',
+                'null'       => true, // Bisa null karena sapi menggunakan qurban_group
+                'unique'     => true, // Setiap tag harus unik
+                'after'      => 'qurban_group',
             ],
         ]);
-
-        // Add foreign key constraint if you have a separate animals table
-        // For now, let's assume 'qurban_animal_id' will simply be a reference without a direct FK for simplicity
-        // If you later create an 'animals' table, you can add:
-        // $this->forge->addForeignKey('qurban_animal_id', 'animals', 'id', 'SET NULL', 'CASCADE');
     }
 
-    public function down(): void
+    public function down()
     {
-        $this->forge->dropColumn('meat_distribution', 'qurban_animal_id');
+        $this->forge->dropColumn('qurban_participants', 'animal_tag');
     }
 }

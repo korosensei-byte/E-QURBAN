@@ -3,42 +3,65 @@
 namespace App\Controllers;
 
 use App\Models\TransactionModel;
+// Tambahkan QurbanParticipantModel untuk menghitung hewan
+use App\Models\QurbanParticipantModel;
 use CodeIgniter\Controller;
 
 class Financial extends BaseController
 {
     protected $transactionModel;
+    // Definisikan properti untuk model baru
+    protected $qurbanParticipantModel;
 
     public function __construct()
     {
         $this->transactionModel = new TransactionModel();
+        // Inisialisasi model baru
+        $this->qurbanParticipantModel = new QurbanParticipantModel();
     }
 
-    public function index()
-    {
-        // Hanya admin yang bisa mengakses rekapan keuangan
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
+public function index()
+{
+    // Hanya admin yang bisa mengakses rekapan keuangan
+    if (! in_groups('admin')) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+    }
 
-        $data['title'] = 'Rekapan Keuangan';
-        $data['transactions'] = $this->transactionModel->findAll();
+    $data['title'] = 'Rekapan Keuangan';
+    $data['transactions'] = $this->transactionModel->findAll();
 
-        $totalIncome = 0;
-        $totalExpense = 0;
-        foreach ($data['transactions'] as $transaction) {
-            if ($transaction['transaction_type'] === 'in') {
-                $totalIncome += $transaction['amount'];
-            } else {
-                $totalExpense += $transaction['amount'];
+    $totalIncome = 0;
+    $totalExpense = 0;
+    $totalAdminFee = 0; 
+
+    foreach ($data['transactions'] as $transaction) {
+        if ($transaction['transaction_type'] === 'in') {
+            $totalIncome += $transaction['amount'];
+            if (strpos($transaction['description'], 'Administrasi') !== false) {
+                $totalAdminFee += $transaction['amount'];
             }
+        } else {
+            $totalExpense += $transaction['amount'];
         }
-        $data['totalIncome'] = $totalIncome;
-        $data['totalExpense'] = $totalExpense;
-        $data['balance'] = $totalIncome - $totalExpense;
-
-        return view('financial/index', $data);
     }
+    $data['totalIncome'] = $totalIncome;
+    $data['totalExpense'] = $totalExpense;
+    $data['balance'] = $totalIncome - $totalExpense;
+    $data['totalAdminFee'] = $totalAdminFee;
+
+    // Menghitung jumlah kambing yang statusnya sudah lunas
+    $data['totalKambing'] = $this->qurbanParticipantModel->where(['animal_type' => 'kambing', 'payment_status' => 'paid'])->countAllResults();
+
+    // Hitung jumlah sapi (berdasarkan grup unik yang sudah lunas)
+    $data['totalSapi'] = $this->qurbanParticipantModel->where(['animal_type' => 'sapi', 'payment_status' => 'paid'])->groupBy('qurban_group')->countAllResults();
+    
+    // --- TAMBAHAN BARU: Definisikan Harga Hewan ---
+    $data['hargaKambing'] = 2700000; // Harga sesuai controller Qurban
+    $data['hargaSapi'] = 3000000;    // Harga iuran per orang sesuai controller Qurban
+    // --- AKHIR TAMBAHAN BARU ---
+
+    return view('financial/index', $data);
+}
 
     public function add()
     {

@@ -43,10 +43,28 @@ $routes->group('distribution', ['filter' => 'role:admin,panitia'], function($rou
     $routes->get('/', 'Distribution::index');
     $routes->get('add', 'Distribution::add');
     $routes->post('save', 'Distribution::save');
-    $routes->post('autodistributemeat', 'Distribution::autoDistributeMeat'); // Tambahkan ini
-    $routes->get('generateqrcode/(:any)', 'Distribution::generateQrCode/$1'); // Untuk menampilkan QR code
+    // $routes->post('autodistributemeat', 'Distribution::autoDistributeMeat'); // Tambahkan ini
+
+        // Rute baru untuk halaman khusus kambing
+    $routes->get('kambing', 'Distribution::manageKambing');
+    $routes->post('kambing/distribute', 'Distribution::distributeKambing');
+
+    // Rute baru untuk halaman khusus sapi
+    $routes->get('sapi', 'Distribution::manageSapi');
+    $routes->post('sapi/distribute', 'Distribution::distributeSapi');
+
     $routes->get('scan', 'Distribution::scanQrCode');
     $routes->post('verifyqrcode', 'Distribution::verifyQrCode');
+
+    $routes->get('qrimage/(:any)', 'Distribution::generateQrImage/$1');
+
+
+    // $routes->get('generateqrcode/(:any)', 'Distribution::generateQrCode/$1'); // Untuk menampilkan QR code
+
+    // $routes->post('distributebygroup', 'Distribution::distributeByGroup');
+
+    // $routes->post('distributeKambing', 'Distribution::distributeKambing');
+    // $routes->post('distributeSapi', 'Distribution::distributeSapi');
 });
 
 // Rute untuk User (My Profile dan Kartu QR)

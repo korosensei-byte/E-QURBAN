@@ -4,12 +4,12 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800"><?= $title; ?></h1>
 
-    <?php if (session()->getFlashdata('message')) : ?>
+    <?php if (session()->getFlashdata('message')): ?>
         <div class="alert alert-success" role="alert">
             <?= session()->getFlashdata('message'); ?>
         </div>
     <?php endif; ?>
-    <?php if (session()->getFlashdata('error')) : ?>
+    <?php if (session()->getFlashdata('error')): ?>
         <div class="alert alert-danger" role="alert">
             <?= session()->getFlashdata('error'); ?>
         </div>
@@ -22,10 +22,43 @@
                     <h6 class="m-0 font-weight-bold text-primary">Ringkasan Keuangan</h6>
                 </div>
                 <div class="card-body">
-                    <p>Total Pemasukan: **Rp <?= number_format($totalIncome, 0, ',', '.'); ?>**</p>
-                    <p>Total Pengeluaran: **Rp <?= number_format($totalExpense, 0, ',', '.'); ?>**</p>
-                    <p>Saldo Kas: **Rp <?= number_format($balance, 0, ',', '.'); ?>**</p>
-                    <a href="<?= base_url('financial/add'); ?>" class="btn btn-primary btn-sm">Tambah Transaksi Baru</a>
+                    <p>Total Pemasukan: <strong>Rp <?= number_format($totalIncome, 0, ',', '.'); ?></strong></p>
+                    <p>Total Pengeluaran: <strong>Rp <?= number_format($totalExpense, 0, ',', '.'); ?></strong></p>
+                    <p>Saldo Kas: <strong>Rp <?= number_format($balance, 0, ',', '.'); ?></strong></p>
+                    <hr>
+
+
+                    <div class="row">
+                        <div class="col-md-6  p-3">
+                            <!-- Kolom Kiri -->
+                            <h6>Rincian Qurban:</h6>
+                            <ul class="list-unstyled">
+                                <li>Jumlah Kambing Terbeli: <strong><?= $totalKambing; ?> ekor</strong></li>
+                                <li>Jumlah Sapi Terbeli: <strong><?= $totalSapi; ?> ekor</strong></li>
+                                <li>Total Uang Administrasi: <strong>Rp
+                                        <?= number_format($totalAdminFee, 0, ',', '.'); ?></strong></li>
+                                <br>
+
+                            </ul>
+                        </div>
+                        <div class="col-md-6 p-3">
+                            <!-- Kolom Kanan -->
+                            <h6>Keterangan Harga Qurban:</h6>
+
+                            <ul class="list-unstyled">
+
+                                <li>Harga per Kambing: <strong>Rp
+                                        <?= number_format($hargaKambing, 0, ',', '.'); ?></strong>
+                                </li>
+                                <li>Harga per Iuran Sapi (7 Orang): <strong>Rp
+                                        <?= number_format($hargaSapi, 0, ',', '.'); ?></strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <a href="<?= base_url('financial/add'); ?>" class="btn btn-primary btn-sm mt-2">Tambah Transaksi
+                        Baru</a>
                 </div>
             </div>
 
@@ -48,24 +81,25 @@
                             </thead>
                             <tbody>
                                 <?php $i = 1; ?>
-                                <?php foreach ($transactions as $transaction) : ?>
+                                <?php foreach ($transactions as $transaction): ?>
                                     <tr>
                                         <td><?= $i++; ?></td>
                                         <td>
-                                            <span class="badge badge-<?= $transaction['transaction_type'] === 'in' ? 'success' : 'danger'; ?>">
+                                            <span
+                                                class="badge badge-<?= $transaction['transaction_type'] === 'in' ? 'success' : 'danger'; ?>">
                                                 <?= ucfirst($transaction['transaction_type']); ?>
                                             </span>
                                         </td>
                                         <td>Rp <?= number_format($transaction['amount'], 0, ',', '.'); ?></td>
                                         <td><?= $transaction['description']; ?></td>
                                         <td>
-                                            <?php if ($transaction['related_user_id']) : ?>
+                                            <?php if ($transaction['related_user_id']): ?>
                                                 <?php
-                                                    $userModel = new \Myth\Auth\Models\UserModel();
-                                                    $user = $userModel->find($transaction['related_user_id']);
-                                                    echo $user ? $user->username : 'N/A';
+                                                $userModel = new \Myth\Auth\Models\UserModel();
+                                                $user = $userModel->find($transaction['related_user_id']);
+                                                echo $user ? $user->username : 'N/A';
                                                 ?>
-                                            <?php else : ?>
+                                            <?php else: ?>
                                                 -
                                             <?php endif; ?>
                                         </td>

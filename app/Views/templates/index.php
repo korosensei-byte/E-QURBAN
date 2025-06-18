@@ -10,8 +10,10 @@
     <meta name="author" content="">
 
     <!-- <title>My Profile</title> -->
-    <title><?= $title; ?></title>
-
+    <!-- <title>
+        
+    </title> -->
+    
 
     <!-- Custom fonts for this template-->
     <link href="<?= base_url(); ?>/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">

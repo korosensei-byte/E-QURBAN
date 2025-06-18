@@ -3,214 +3,228 @@
 namespace App\Controllers;
 
 use App\Models\MeatDistributionModel;
-use Myth\Auth\Models\UserModel;
-use App\Models\QurbanParticipantModel; // Import QurbanParticipantModel
+use App\Models\MeatDistributionKambingModel; // Tambahkan ini
+use App\Models\MeatDistributionSapiModel;   // Tambahkan ini
+use App\Models\QurbanParticipantModel;
 use chillerlan\QRCode\{QRCode, QROptions};
 use CodeIgniter\I18n\Time;
+use Myth\Auth\Models\GroupModel;
+use Myth\Auth\Models\UserModel;
 
 class Distribution extends BaseController
 {
     protected $meatDistributionModel;
+    protected $kambingDistModel; // Tambahkan ini
+    protected $sapiDistModel;    // Tambahkan ini
     protected $userModel;
-    protected $qurbanParticipantModel; // Tambahkan
+    protected $qurbanParticipantModel;
+    protected $groupModel;
+    protected $db;
 
     public function __construct()
     {
         $this->meatDistributionModel = new MeatDistributionModel();
+        $this->kambingDistModel = new MeatDistributionKambingModel(); // Tambahkan ini
+        $this->sapiDistModel = new MeatDistributionSapiModel();       // Tambahkan ini
         $this->userModel = new UserModel();
-        $this->qurbanParticipantModel = new QurbanParticipantModel(); // Inisialisasi
+        $this->qurbanParticipantModel = new QurbanParticipantModel();
+        $this->groupModel = new GroupModel();
+        $this->db = \Config\Database::connect();
     }
 
+    // Menampilkan halaman utama dengan dua tombol
     public function index()
     {
-        // Hanya admin yang bisa mengakses rekapan pembagian daging
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        $data['title'] = 'Rekapan Pembagian Daging';
-        $data['distributions'] = $this->meatDistributionModel
-                                    ->select('meat_distribution.*, users.username, users.email')
-                                    ->join('users', 'users.id = meat_distribution.recipient_user_id')
-                                    ->findAll();
-
-        return view('distribution/index', $data);
+        return view('distribution/index');
     }
 
-    public function add()
+    // Menampilkan halaman khusus untuk mengelola daging kambing
+    public function manageKambing()
     {
-        // Hanya admin yang bisa menambahkan catatan pembagian
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        $data['title'] = 'Tambah Catatan Pembagian Daging';
-        $data['users'] = $this->userModel->findAll();
-        return view('distribution/add', $data);
+        $data['title'] = "Manajemen Distribusi Daging Kambing";
+        $data['distributions'] = $this->kambingDistModel
+            ->select('meat_distribution_kambing.*, users.username')
+            ->join('users', 'users.id = meat_distribution_kambing.recipient_user_id', 'left')
+            ->orderBy('distribution_date', 'DESC')
+            ->findAll();
+            
+        return view('distribution/kambing', $data);
+    }
+    
+    // Menampilkan halaman khusus untuk mengelola daging sapi
+    public function manageSapi()
+    {
+        $data['title'] = "Manajemen Distribusi Daging Sapi";
+        $data['distributions'] = $this->sapiDistModel
+            ->select('meat_distribution_sapi.*, users.username')
+            ->join('users', 'users.id = meat_distribution_sapi.recipient_user_id', 'left')
+            ->orderBy('distribution_date', 'DESC')
+            ->findAll();
+            
+        return view('distribution/sapi', $data);
     }
 
-    public function save()
+    // Memproses form distribusi daging kambing
+    public function distributeKambing()
     {
-        // Hanya admin yang bisa menyimpan catatan pembagian
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        if (! $this->validate([
-            'recipient_user_id' => 'required|integer|is_not_unique[users.id]',
-            'distribution_type' => 'required|in_list[warga,berqurban,panitia]', // Tetap 'panitia' di sini jika Anda ingin merekam pembagian untuk panitia (namun tidak ada role panitia yang bisa login)
-            'meat_weight_kg'    => 'required|numeric|greater_than[0]',
-            'distribution_date' => 'required|valid_date[Y-m-d H:i:s]',
-        ])) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        $recipientUserId = $this->request->getPost('recipient_user_id');
-        $distributionType = $this->request->getPost('distribution_type');
-        $meatWeightKg = $this->request->getPost('meat_weight_kg');
-        $distributionDate = $this->request->getPost('distribution_date');
-
-        $qrCodeString = $recipientUserId . '_' . $distributionType . '_' . uniqid();
-
-        $this->meatDistributionModel->save([
-            'recipient_user_id' => $recipientUserId,
-            'distribution_type' => $distributionType,
-            'meat_weight_kg'    => $meatWeightKg,
-            'distribution_date' => $distributionDate,
-            'status'            => 'pending',
-            'qr_code'           => $qrCodeString,
-        ]);
-
-        return redirect()->to('/distribution')->with('message', 'Catatan pembagian daging berhasil ditambahkan!');
+        return $this->_distributeMeat('kambing', (float)$this->request->getPost('total_meat_weight_kambing'));
     }
 
-    public function autoDistributeMeat()
+    // Memproses form distribusi daging sapi
+    public function distributeSapi()
     {
-        // Hanya admin yang bisa melakukan otomatisasi pembagian
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
+        return $this->_distributeMeat('sapi', (float)$this->request->getPost('total_meat_weight_sapi'));
+    }
+
+    private function _distributeMeat(string $animalType, float $totalMeatWeight)
+    {
+        if (!in_groups(['admin', 'panitia'])) return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
+        if ($totalMeatWeight <= 0) return redirect()->back()->withInput()->with('error', 'Total berat daging harus lebih besar dari 0.');
+
+        $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+        $animalPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
+        
+        $this->db->transStart();
+
+        $alreadyDistributed = $model->where('qurban_animal_id', $animalPoolId)->first();
+        if ($alreadyDistributed) {
+            $this->db->transComplete();
+            return redirect()->back()->with('error', "Daging untuk pool '{$animalType}' hari ini sudah pernah didistribusikan.");
         }
 
-        $totalMeatWeight = $this->request->getPost('total_meat_weight');
-        $qurbanAnimalId = $this->request->getPost('qurban_animal_id');
-
-        if (!$totalMeatWeight || $totalMeatWeight <= 0) {
-            return redirect()->back()->with('error', 'Total berat daging harus diisi dan lebih dari 0.');
+        $allPequrban = $this->qurbanParticipantModel->where(['animal_type' => $animalType, 'payment_status' => 'paid'])->findAll();
+        if (empty($allPequrban)) {
+            $this->db->transComplete();
+            return redirect()->back()->with('error', "Tidak ada peserta qurban '{$animalType}' yang lunas.");
         }
 
-        // Proporsi pembagian (dapat disesuaikan)
-        // Asumsi role 'warga' = warga umum, 'admin' = panitia, 'berqurban' = shohibul qurban
-        $wargaPercentage = 0.33;
-        $adminPercentage = 0.33;
-        $berqurbanPercentage = 0.34;
-
-        $wargaMeatWeight = $totalMeatWeight * $wargaPercentage;
-        $adminMeatWeight = $totalMeatWeight * $adminPercentage;
-        $berqurbanMeatWeight = $totalMeatWeight * $berqurbanPercentage;
-
-        $wargaUsers = $this->userModel->getUsersInGroup('user'); // Asumsi 'user' adalah warga umum
-        $adminUsers = $this->userModel->getUsersInGroup('admin'); // Asumsi 'admin' adalah panitia
-        $berqurbanUsers = $this->userModel->getUsersInGroup('berqurban'); // Asumsi 'berqurban' adalah shohibul qurban
-
-        // Fetch actual user objects for getting IDs
-        $wargaUserObjects = $this->userModel->whereIn('id', $wargaUsers)->findAll();
-        $adminUserObjects = $this->userModel->whereIn('id', $adminUsers)->findAll();
-        $berqurbanUserObjects = $this->userModel->whereIn('id', $berqurbanUsers)->findAll();
-
-        $numWarga = count($wargaUserObjects);
-        $numAdmin = count($adminUserObjects);
-        $numBerqurban = count($berqurbanUserObjects);
-
-        $meatPerWarga = ($numWarga > 0) ? $wargaMeatWeight / $numWarga : 0;
-        $meatPerAdmin = ($numAdmin > 0) ? $adminMeatWeight / $numAdmin : 0;
-        $meatPerBerqurban = ($numBerqurban > 0) ? $berqurbanMeatWeight / $numBerqurban : 0;
+        $meatForPequrban = $totalMeatWeight * (1 / 3);
+        $meatForOthers = $totalMeatWeight * (2 / 3);
+        $meatPerPequrban = $meatForPequrban / count($allPequrban);
+        $pequrbanUserIds = array_column($allPequrban, 'user_id');
 
         $dataToInsert = [];
         $distributionDate = Time::now()->toDateTimeString();
 
-        foreach ($wargaUserObjects as $user) {
-            $qrCodeString = $user->id . '_warga_' . uniqid();
-            $dataToInsert[] = [
-                'recipient_user_id' => $user->id,
-                'distribution_type' => 'warga',
-                'meat_weight_kg'    => round($meatPerWarga, 2),
-                'distribution_date' => $distributionDate,
-                'status'            => 'pending',
-                'qr_code'           => $qrCodeString,
-                'qurban_animal_id'  => $qurbanAnimalId,
-            ];
+        foreach ($allPequrban as $user) {
+            $dataToInsert[] = $this->_prepareDistributionData($user['user_id'], 'berqurban', round($meatPerPequrban, 2), $distributionDate, $animalPoolId);
         }
 
-        foreach ($adminUserObjects as $user) {
-            $qrCodeString = $user->id . '_admin_panitia_' . uniqid(); // Label ini hanya untuk internal QR
-            $dataToInsert[] = [
-                'recipient_user_id' => $user->id,
-                'distribution_type' => 'panitia', // Di database, masih pakai enum 'panitia' untuk admin
-                'meat_weight_kg'    => round($meatPerAdmin, 2),
-                'distribution_date' => $distributionDate,
-                'status'            => 'pending',
-                'qr_code'           => $qrCodeString,
-                'qurban_animal_id'  => $qurbanAnimalId,
-            ];
+        $finalRecipientIds = $this->_getEligibleRecipients($pequrbanUserIds);
+        if (!empty($finalRecipientIds)) {
+            $meatPerRecipient = $meatForOthers / count($finalRecipientIds);
+            $eligiblePanitiaIds = $this->_getEligiblePanitiaIds();
+
+            foreach ($finalRecipientIds as $userId) {
+                $type = in_array($userId, $eligiblePanitiaIds) ? 'panitia' : 'warga';
+                $dataToInsert[] = $this->_prepareDistributionData($userId, $type, round($meatPerRecipient, 2), $distributionDate, $animalPoolId);
+            }
+        }
+        
+        if (!empty($dataToInsert)) {
+            $model->insertBatch($dataToInsert);
+        }
+        
+        $this->db->transComplete();
+
+        if ($this->db->transStatus() === false) {
+             return redirect()->back()->with('error', 'Gagal menyimpan data distribusi.');
         }
 
-        foreach ($berqurbanUserObjects as $user) {
-            $qrCodeString = $user->id . '_berqurban_' . uniqid();
-            $dataToInsert[] = [
-                'recipient_user_id' => $user->id,
-                'distribution_type' => 'berqurban',
-                'meat_weight_kg'    => round($meatPerBerqurban, 2),
-                'distribution_date' => $distributionDate,
-                'status'            => 'pending',
-                'qr_code'           => $qrCodeString,
-                'qurban_animal_id'  => $qurbanAnimalId,
-            ];
+        return redirect()->to('/distribution/' . $animalType)->with('message', "Pembagian daging dari pool '{$animalType}' berhasil dialokasikan!");
+    }
+
+    private function _prepareDistributionData(int $userId, string $distType, float $weight, string $date, string $poolId): array
+    {
+        return [
+            'recipient_user_id' => $userId,
+            'distribution_type' => $distType,
+            'meat_weight'       => $weight,
+            'distribution_date' => $date,
+            'status'            => 'pending',
+            'qr_code'           => 'DSTR' . $userId . '_' . strtoupper($poolId) . '_' . uniqid(),
+            'qurban_animal_id'  => $poolId,
+        ];
+    }
+    
+    // --- FUNGSI DENGAN PERBAIKAN ---
+    private function _getEligiblePanitiaIds(): array
+    {
+        $panitiaGroup = $this->groupModel->where('name', 'panitia')->first();
+        if (!$panitiaGroup) {
+            return [];
         }
 
-        if (! empty($dataToInsert)) {
-            $this->meatDistributionModel->insertBatch($dataToInsert);
-            return redirect()->to('/distribution')->with('message', 'Pembagian daging otomatis berhasil dilakukan!');
-        } else {
-            return redirect()->back()->with('error', 'Tidak ada user yang terdaftar untuk pembagian daging.');
+        $allPanitiaResult = $this->userModel->join('auth_groups_users', 'auth_groups_users.user_id = users.id')
+            ->where('auth_groups_users.group_id', $panitiaGroup->id)
+            ->select('users.id')->findAll();
+        $allPanitiaIds = array_column($allPanitiaResult, 'id');
+
+        // Cek kedua tabel distribusi untuk panitia yang sudah menerima
+        $receivedFromKambing = $this->kambingDistModel->where('distribution_type', 'panitia')->select('recipient_user_id')->distinct()->findAll();
+        $receivedFromSapi = $this->sapiDistModel->where('distribution_type', 'panitia')->select('recipient_user_id')->distinct()->findAll();
+        
+        $receivedPanitiaIds = array_unique(array_merge(
+            array_column($receivedFromKambing, 'recipient_user_id'),
+            array_column($receivedFromSapi, 'recipient_user_id')
+        ));
+        
+        return array_diff($allPanitiaIds, $receivedPanitiaIds);
+    }
+    // --- AKHIR PERBAIKAN ---
+
+    private function _getEligibleRecipients(array $excludeUserIds = []): array
+    {
+        $eligiblePanitiaIds = $this->_getEligiblePanitiaIds();
+        
+        $wargaGroup = $this->groupModel->where('name', 'user')->first();
+        $wargaUserIds = [];
+        if ($wargaGroup) {
+            $wargaUsers = $this->userModel->join('auth_groups_users', 'auth_groups_users.user_id = users.id')->where('auth_groups_users.group_id', $wargaGroup->id)->select('users.id')->findAll();
+            $wargaUserIds = array_column($wargaUsers, 'id');
         }
+        
+        $allRecipientIds = array_unique(array_merge($wargaUserIds, $eligiblePanitiaIds));
+        
+        return array_diff($allRecipientIds, $excludeUserIds);
     }
 
     public function scanQrCode()
     {
-        // Hanya admin yang bisa melakukan scan QR
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
+        if (! in_groups('admin', 'panitia')) return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         $data['title'] = 'Scan QR Code Pengambilan Daging';
         return view('distribution/scan', $data);
     }
 
     public function verifyQrCode()
     {
-        // Hanya admin yang bisa memverifikasi QR
-        if (! in_groups('admin')) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
+        if (! in_groups('admin', 'panitia')) return redirect()->back()->with('error', 'Anda tidak memiliki akses ke halaman ini.');
         $qrCodeInput = $this->request->getPost('qr_code_input');
+        
+        // Cek di tabel kambing dulu
+        $distribution = $this->kambingDistModel->where('qr_code', $qrCodeInput)->first();
+        $model = $this->kambingDistModel;
+        $animalType = 'kambing';
 
-        $distribution = $this->meatDistributionModel->where('qr_code', $qrCodeInput)->first();
+        // Jika tidak ketemu, cek di tabel sapi
+        if (!$distribution) {
+            $distribution = $this->sapiDistModel->where('qr_code', $qrCodeInput)->first();
+            $model = $this->sapiDistModel;
+            $animalType = 'sapi';
+        }
 
         if ($distribution) {
             if ($distribution['status'] === 'distributed') {
                 return redirect()->back()->with('error', 'Daging sudah diambil sebelumnya.');
             }
-
-            $this->meatDistributionModel->update($distribution['id'], [
+            $model->update($distribution['id'], [
                 'status' => 'distributed',
                 'collected_at' => date('Y-m-d H:i:s'),
                 'collected_by_user_id' => user()->id,
             ]);
-
             $recipient = $this->userModel->find($distribution['recipient_user_id']);
-
-            return redirect()->back()->with('message', 'QR Code valid! Daging berhasil diberikan kepada ' . $recipient->username . ' (' . $distribution['meat_weight_kg'] . ' kg).');
+            
+            return redirect()->back()->with('message', 'QR Code valid! Daging (' . $animalType . ') berhasil diberikan kepada ' . $recipient->username . ' (' . $distribution['meat_weight'] . ' kg).');
         } else {
             return redirect()->back()->withInput()->with('error', 'QR Code tidak valid.');
         }

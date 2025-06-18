@@ -4,11 +4,16 @@
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800"><?= $title; ?></h1>
 
-    <?php if (session()->getFlashdata('message')): ?>
-        <div class="alert alert-success" role="alert">
-            <?= session()->getFlashdata('message'); ?>
-        </div>
-    <?php endif; ?>
+<?php if (session()->getFlashdata('message')) : ?>
+    <div id="success-alert" class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('message'); ?>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+<?php endif; ?>
+
+    
     <?php if (session()->getFlashdata('error')): ?>
         <div class="alert alert-danger" role="alert">
             <?= session()->getFlashdata('error'); ?>

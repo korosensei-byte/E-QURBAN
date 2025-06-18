@@ -6,9 +6,16 @@
     <a href="<?= base_url('distribution'); ?>" class="btn btn-secondary mb-3"><i class="fas fa-arrow-left"></i>
         Kembali</a>
 
-    <?php if (session()->getFlashdata('message')): ?>
-        <div class="alert alert-success" role="alert"><?= session()->getFlashdata('message'); ?></div>
-    <?php endif; ?>
+<?php if (session()->getFlashdata('message')) : ?>
+    <div id="success-alert" class="alert alert-success alert-dismissible fade show" role="alert">
+        <?= session()->getFlashdata('message'); ?>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+<?php endif; ?>
+
+
     <?php if (session()->getFlashdata('error')): ?>
         <div class="alert alert-danger" role="alert"><?= session()->getFlashdata('error'); ?></div>
     <?php endif; ?>
@@ -28,17 +35,43 @@
                     <small class="form-text text-muted">Masukkan total berat semua daging kambing yang tersedia untuk
                         didistribusikan hari ini.</small>
                 </div>
+                
                 <button type="submit" class="btn btn-primary"
                     onclick="return confirm('Anda yakin ingin mendistribusikan total daging kambing ini?')">
                     <i class="fas fa-divide"></i> Alokasikan Daging Kambing
                 </button>
             </form>
+            
         </div>
     </div>
 
     <hr>
 
-    <h4 class="mt-4 mb-3">Riwayat Alokasi Daging Kambing</h4>
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h4>Riwayat Alokasi Daging Kambing</h4>
+    
+    <div class="btn-group">
+        <?php if ($canReset): ?>
+            <form action="<?= base_url('distribution/kambing/reset') ?>" method="post" class="mr-2" onsubmit="return confirm('Anda yakin ingin me-RESET semua status pengambilan hari ini kembali ke Pending?');">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-undo"></i> Reset Hari Ini
+                </button>
+            </form>
+        <?php endif; ?>
+
+        <?php if ($hasPending): ?>
+            <form action="<?= base_url('distribution/kambing/markall') ?>" method="post" onsubmit="return confirm('Anda yakin ingin menandai SEMUA yang pending menjadi sudah diambil? Aksi ini tidak dapat dibatalkan.');">
+                <?= csrf_field() ?>
+                <button type="submit" class="btn btn-sm btn-info">
+                    <i class="fas fa-check-double"></i> Tandai Semua Sudah Diambil
+                </button>
+            </form>
+        <?php endif; ?>
+    </div>
+</div>
+
+
     <div class="table-responsive">
         <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
             <thead>

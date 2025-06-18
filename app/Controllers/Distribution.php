@@ -37,30 +37,73 @@ class Distribution extends BaseController
     }
 
     // Menampilkan halaman khusus untuk mengelola daging kambing
-    public function manageKambing()
-    {
-        $data['title'] = "Manajemen Distribusi Daging Kambing";
-        $data['distributions'] = $this->kambingDistModel
-            ->select('meat_distribution_kambing.*, users.username')
-            ->join('users', 'users.id = meat_distribution_kambing.recipient_user_id', 'left')
-            ->orderBy('distribution_date', 'DESC')
-            ->findAll();
+    // public function manageKambing()
+    // {
+    //     $data['title'] = "Manajemen Distribusi Daging Kambing";
+    //     $data['distributions'] = $this->kambingDistModel
+    //         ->select('meat_distribution_kambing.*, users.username')
+    //         ->join('users', 'users.id = meat_distribution_kambing.recipient_user_id', 'left')
+    //         ->orderBy('distribution_date', 'DESC')
+    //         ->findAll();
 
-        return view('distribution/kambing', $data);
-    }
+    //     return view('distribution/kambing', $data);
+    // }
 
-    // Menampilkan halaman khusus untuk mengelola daging sapi
-    public function manageSapi()
-    {
-        $data['title'] = "Manajemen Distribusi Daging Sapi";
-        $data['distributions'] = $this->sapiDistModel
-            ->select('meat_distribution_sapi.*, users.username')
-            ->join('users', 'users.id = meat_distribution_sapi.recipient_user_id', 'left')
-            ->orderBy('distribution_date', 'DESC')
-            ->findAll();
+    // // Menampilkan halaman khusus untuk mengelola daging sapi
+    // public function manageSapi()
+    // {
+    //     $data['title'] = "Manajemen Distribusi Daging Sapi";
+    //     $data['distributions'] = $this->sapiDistModel
+    //         ->select('meat_distribution_sapi.*, users.username')
+    //         ->join('users', 'users.id = meat_distribution_sapi.recipient_user_id', 'left')
+    //         ->orderBy('distribution_date', 'DESC')
+    //         ->findAll();
 
-        return view('distribution/sapi', $data);
-    }
+    //     return view('distribution/sapi', $data);
+    // }
+
+public function manageKambing()
+{
+    $data['title'] = "Manajemen Distribusi Daging Kambing";
+    $distributions = $this->kambingDistModel
+        ->select('meat_distribution_kambing.*, users.username')
+        ->join('users', 'users.id = meat_distribution_kambing.recipient_user_id', 'left')
+        ->orderBy('distribution_date', 'DESC')
+        ->findAll();
+
+    $todayPoolId = strtoupper('kambing') . '_POOL_' . date('Y-m-d');
+
+    // Cek apakah ada data dengan status 'pending'
+    $data['hasPending'] = !empty(array_filter($distributions, fn ($dist) => $dist['status'] === 'pending' && $dist['qurban_animal_id'] === $todayPoolId));
+    // Cek apakah ada data 'distributed' untuk hari ini yang bisa di-reset
+    $data['canReset'] = !empty(array_filter($distributions, fn ($dist) => $dist['status'] === 'distributed' && $dist['qurban_animal_id'] === $todayPoolId));
+
+    $data['distributions'] = $distributions;
+
+    return view('distribution/kambing', $data);
+}
+
+// Ganti fungsi manageSapi() yang ada
+public function manageSapi()
+{
+    $data['title'] = "Manajemen Distribusi Daging Sapi";
+    $distributions = $this->sapiDistModel
+        ->select('meat_distribution_sapi.*, users.username')
+        ->join('users', 'users.id = meat_distribution_sapi.recipient_user_id', 'left')
+        ->orderBy('distribution_date', 'DESC')
+        ->findAll();
+
+    $todayPoolId = strtoupper('sapi') . '_POOL_' . date('Y-m-d');
+
+    // Cek apakah ada data dengan status 'pending'
+    $data['hasPending'] = !empty(array_filter($distributions, fn ($dist) => $dist['status'] === 'pending' && $dist['qurban_animal_id'] === $todayPoolId));
+    // Cek apakah ada data 'distributed' untuk hari ini yang bisa di-reset
+    $data['canReset'] = !empty(array_filter($distributions, fn ($dist) => $dist['status'] === 'distributed' && $dist['qurban_animal_id'] === $todayPoolId));
+
+    $data['distributions'] = $distributions;
+
+    return view('distribution/sapi', $data);
+}
 
     // Memproses form distribusi daging kambing
     public function distributeKambing()
@@ -73,6 +116,58 @@ class Distribution extends BaseController
     {
         return $this->_distributeMeat('sapi', (float)$this->request->getPost('total_meat_weight_sapi'));
     }
+
+    public function markAllAsDistributed($animalType)
+{
+    // Keamanan: Pastikan hanya admin atau panitia yang bisa mengakses
+    if (!in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+    }
+
+    // Tentukan model mana yang akan digunakan berdasarkan tipe hewan
+    $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+
+    // Siapkan data untuk update
+    $updateData = [
+        'status'                 => 'distributed',
+        'collected_at'           => date('Y-m-d H:i:s'), // Catat waktu pengambilan
+        'collected_by_user_id'   => user()->id,          // Catat siapa yang mengubah status
+    ];
+
+    // Lakukan update massal untuk semua yang statusnya 'pending'
+    $model->where('status', 'pending')->set($updateData)->update();
+
+    // Arahkan kembali dengan pesan sukses
+    return redirect()->to('/distribution/' . $animalType)
+        ->with('message', 'Semua status "pending" untuk daging ' . $animalType . ' berhasil diubah menjadi "Distributed".');
+}
+
+public function resetDistribution($animalType)
+{
+    // Keamanan: Pastikan hanya admin atau panitia yang bisa mengakses
+    if (!in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+    }
+
+    // Tentukan model dan ID pool untuk hari ini
+    $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+    $todayPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
+
+    // Siapkan data untuk di-reset
+    $resetData = [
+        'status'                 => 'pending',
+        'collected_at'           => null,
+        'collected_by_user_id'   => null,
+    ];
+
+    // Lakukan update massal HANYA untuk pool hari ini
+    $model->where('qurban_animal_id', $todayPoolId)
+          ->set($resetData)
+          ->update();
+
+    return redirect()->to('/distribution/' . $animalType)
+        ->with('message', 'Semua status distribusi untuk hari ini berhasil di-reset menjadi "Pending".');
+}
 
     private function _distributeMeat(string $animalType, float $totalMeatWeight)
     {

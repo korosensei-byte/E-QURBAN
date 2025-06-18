@@ -57,6 +57,12 @@ $routes->group('distribution', ['filter' => 'role:admin,panitia'], function($rou
     $routes->post('verifyqrcode', 'Distribution::verifyQrCode');
     $routes->get('kambing/markasdistributed/(:num)', 'Distribution::markAsDistributed/kambing/$1');
     $routes->get('sapi/markasdistributed/(:num)', 'Distribution::markAsDistributed/sapi/$1');
+
+    $routes->post('kambing/markall', 'Distribution::markAllAsDistributed/kambing');
+    $routes->post('sapi/markall', 'Distribution::markAllAsDistributed/sapi');
+
+    $routes->post('kambing/reset', 'Distribution::resetDistribution/kambing');
+    $routes->post('sapi/reset', 'Distribution::resetDistribution/sapi');
 });
 // Rute untuk generate gambar QR (TIDAK PERLU FILTER, JADIKAN PUBLIK)
 $routes->get('distribution/qrimage/(:any)', 'Distribution::generateQrImage/$1');

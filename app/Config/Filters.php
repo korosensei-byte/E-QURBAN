@@ -72,19 +72,48 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, array<string, string>>>|array<string, list<string>>
      */
+
+
+    // public array $globals = [
+    //     'before' => [
+    //         // 'honeypot',
+    //         // 'csrf',
+    //         // 'invalidchars',
+    //         'login',
+
+    //     ],
+    //     'after' => [
+    //         // 'honeypot',
+    //         // 'secureheaders',
+    //     ],
+    // ];
+
     public array $globals = [
         'before' => [
             // 'honeypot',
             // 'csrf',
-            // 'invalidchars',
-            'login',
-
+            'login' => [
+                'except' => [
+                    'login*', 
+                    'register', 
+                    'auth/*',
+                    'distribution/qrimage/*', // Pengecualian untuk QR code distribusi
+                    'user/generateqrcard/*'   // Pengecualian untuk QR code user
+                ]
+            ],
         ],
         'after' => [
+            'toolbar' => [
+                'except' => [
+                    'distribution/qrimage/*', // Nonaktifkan Debug Toolbar untuk rute QR
+                    'user/generateqrcard/*'   // Nonaktifkan Debug Toolbar untuk rute QR
+                ]
+            ],
             // 'honeypot',
             // 'secureheaders',
         ],
     ];
+
 
     /**
      * List of filter aliases that works on a

@@ -2,7 +2,7 @@
 
 use CodeIgniter\Boot;
 use Config\Paths;
-
+require_once __DIR__ . '/../vendor/autoload.php';
 /*
  *---------------------------------------------------------------
  * CHECK PHP VERSION

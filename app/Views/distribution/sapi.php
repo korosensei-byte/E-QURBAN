@@ -51,24 +51,41 @@
     <h4>Riwayat Alokasi Daging Sapi</h4>
     
     <div class="btn-group">
-        <?php if ($canReset): ?>
-            <form action="<?= base_url('distribution/sapi/reset') ?>" method="post" class="mr-2" onsubmit="return confirm('Anda yakin ingin me-RESET semua status pengambilan hari ini kembali ke Pending?');">
-                <?= csrf_field() ?>
-                <button type="submit" class="btn btn-sm btn-danger">
-                    <i class="fas fa-undo"></i> Reset Hari Ini
-                </button>
-            </form>
-        <?php endif; ?>
 
-        <?php if ($hasPending): ?>
-            <form action="<?= base_url('distribution/sapi/markall') ?>" method="post" onsubmit="return confirm('Anda yakin ingin menandai SEMUA yang pending menjadi sudah diambil? Aksi ini tidak dapat dibatalkan.');">
-                <?= csrf_field() ?>
-                <button type="submit" class="btn btn-sm btn-info">
-                    <i class="fas fa-check-double"></i> Tandai Semua Sudah Diambil
-                </button>
-            </form>
-        <?php endif; ?>
-    </div>
+    <?php // Tombol ini muncul jika ada data distribusi hari ini (pending atau sudah diambil)
+    if ($hasPending || $canReset) : ?>
+        <form action="<?= base_url('distribution/sapi/deleteall') ?>" method="post" class="mr-2" onsubmit="return confirm('PERINGATAN: Anda akan MENGHAPUS SEMUA data alokasi daging sapi untuk hari ini. Aksi ini tidak dapat dibatalkan. Lanjutkan?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-sm btn-dark">
+                <i class="fas fa-trash-alt"></i> Hapus Distribusi
+            </button>
+        </form>
+    <?php endif; ?>
+
+    <?php // Tombol ini HANYA muncul jika ada data yang sudah berstatus 'distributed'
+    if ($canReset) : ?>
+        <form action="<?= base_url('distribution/sapi/reset') ?>" method="post" class="mr-2" onsubmit="return confirm('Anda yakin ingin me-RESET semua status pengambilan hari ini kembali ke Pending?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-sm btn-danger">
+                <i class="fas fa-undo"></i> Reset Distribusi
+            </button>
+        </form>
+    <?php endif; ?>
+
+    <?php // Tombol ini HANYA muncul jika ada data yang masih berstatus 'pending'
+    if ($hasPending) : ?>
+        <form action="<?= base_url('distribution/sapi/markall') ?>" method="post" onsubmit="return confirm('Anda yakin ingin menandai SEMUA yang pending menjadi sudah diambil? Aksi ini tidak dapat dibatalkan.');">
+            <?= csrf_field() ?>
+            <button type="submit" class="btn btn-sm btn-info">
+                <i class="fas fa-check-double"></i> Tandai Semua Sudah Diambil
+            </button>
+        </form>
+    <?php endif; ?>
+
+</div>
+
+
+
 </div>
 
 

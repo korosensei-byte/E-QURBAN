@@ -105,6 +105,35 @@ public function manageSapi()
     return view('distribution/sapi', $data);
 }
 
+public function resetDistribution($animalType)
+{
+    // Keamanan: Pastikan hanya admin atau panitia yang bisa mengakses
+    if (!in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+    }
+
+    // Tentukan model dan ID pool untuk hari ini
+    $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+    $todayPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
+
+    // Siapkan data untuk di-reset
+    $resetData = [
+        'status'                 => 'pending',
+        'collected_at'           => null,
+        'collected_by_user_id'   => null,
+    ];
+
+    // Lakukan update massal HANYA untuk pool distribusi hari ini
+    // dan yang statusnya bukan 'pending' (opsional, untuk efisiensi)
+    $model->where('qurban_animal_id', $todayPoolId)
+          ->where('status', 'distributed')
+          ->set($resetData)
+          ->update();
+
+    return redirect()->to('/distribution/' . $animalType)
+        ->with('message', 'Semua status distribusi untuk hari ini berhasil di-reset menjadi "Pending".');
+}
+
     // Memproses form distribusi daging kambing
     public function distributeKambing()
     {
@@ -116,6 +145,25 @@ public function manageSapi()
     {
         return $this->_distributeMeat('sapi', (float)$this->request->getPost('total_meat_weight_sapi'));
     }
+
+    public function deleteDistribution($animalType)
+{
+    // Keamanan: Pastikan hanya admin atau panitia
+    if (!in_groups(['admin', 'panitia'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+    }
+
+    // Tentukan model dan ID pool untuk hari ini
+    $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+    $todayPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
+
+    // Hapus semua data distribusi yang cocok dengan ID pool hari ini
+    $model->where('qurban_animal_id', $todayPoolId)->delete();
+
+    // Arahkan kembali dengan pesan sukses
+    return redirect()->to('/distribution/' . $animalType)
+        ->with('message', 'Semua data alokasi daging ' . $animalType . ' untuk hari ini berhasil dihapus.');
+}
 
     public function markAllAsDistributed($animalType)
 {
@@ -142,32 +190,7 @@ public function manageSapi()
         ->with('message', 'Semua status "pending" untuk daging ' . $animalType . ' berhasil diubah menjadi "Distributed".');
 }
 
-public function resetDistribution($animalType)
-{
-    // Keamanan: Pastikan hanya admin atau panitia yang bisa mengakses
-    if (!in_groups(['admin', 'panitia'])) {
-        return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
-    }
 
-    // Tentukan model dan ID pool untuk hari ini
-    $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
-    $todayPoolId = strtoupper($animalType) . '_POOL_' . date('Y-m-d');
-
-    // Siapkan data untuk di-reset
-    $resetData = [
-        'status'                 => 'pending',
-        'collected_at'           => null,
-        'collected_by_user_id'   => null,
-    ];
-
-    // Lakukan update massal HANYA untuk pool hari ini
-    $model->where('qurban_animal_id', $todayPoolId)
-          ->set($resetData)
-          ->update();
-
-    return redirect()->to('/distribution/' . $animalType)
-        ->with('message', 'Semua status distribusi untuk hari ini berhasil di-reset menjadi "Pending".');
-}
 
     private function _distributeMeat(string $animalType, float $totalMeatWeight)
     {
@@ -231,6 +254,32 @@ public function resetDistribution($animalType)
         return redirect()->to('/distribution/' . $animalType)->with('message', "Pembagian daging dari pool '{$animalType}' berhasil dialokasikan!");
     }
 
+    public function markAsDistributed($animalType, $id)
+    {
+        if (!in_groups(['admin', 'panitia'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+        }
+
+        $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
+
+        $distribution = $model->find($id);
+
+        if (!$distribution || $distribution['status'] === 'distributed') {
+            return redirect()->to('/distribution/' . $animalType)->with('error', 'Data tidak ditemukan atau status sudah diambil.');
+        }
+
+        $model->update($id, [
+            'status'                 => 'distributed',
+            'collected_at'           => date('Y-m-d H:i:s'),
+            'collected_by_user_id'   => user()->id,
+        ]);
+
+        $recipient = $this->userModel->find($distribution['recipient_user_id']);
+        $recipientName = $recipient ? $recipient->username : 'Penerima';
+
+        return redirect()->to('/distribution/' . $animalType)->with('message', 'Status untuk ' . $recipientName . ' berhasil diubah menjadi "Distributed".');
+    }
+
     private function _prepareDistributionData(int $userId, string $distType, float $weight, string $date, string $poolId): array
     {
         return [
@@ -283,31 +332,65 @@ public function resetDistribution($animalType)
         return array_diff($allRecipientIds, $excludeUserIds);
     }
 
-    public function generateQrImage($qrCodeData)
-    {
-        ob_start();
+    // public function generateQrImage($qrCodeData)
+    // {
+    //     ob_start();
 
-        $options = new QROptions([
-            'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel'         => QRCode::ECC_L,
-            'scale'            => 5,
-            'imageTransparent' => false,
-        ]);
+    //     $options = new QROptions([
+    //         'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
+    //         'eccLevel'         => QRCode::ECC_L,
+    //         'scale'            => 5,
+    //         'imageTransparent' => false,
+    //     ]);
 
-        $decodedQrData = urldecode($qrCodeData);
+    //     $decodedQrData = urldecode($qrCodeData);
 
-        (new QRCode($options))->render($decodedQrData);
+    //     (new QRCode($options))->render($decodedQrData);
 
-        $imageData = ob_get_contents();
-        ob_end_clean();
+    //     $imageData = ob_get_contents();
+    //     ob_end_clean();
 
-        header('Content-Type: image/png');
-        header('Content-Length: ' . strlen($imageData));
-        header('Cache-Control: no-cache');
-        echo $imageData;
+    //     header('Content-Type: image/png');
+    //     header('Content-Length: ' . strlen($imageData));
+    //     header('Cache-Control: no-cache');
+    //     echo $imageData;
 
-        exit;
+    //     exit;
+    // }
+
+    // app/Controllers/Distribution.php
+
+public function generateQrImage($qrCodeData)
+{
+    // 1. Dapatkan QR code yang sudah di-decode dari URL
+    $decodedQrData = urldecode($qrCodeData);
+
+    // 2. Siapkan opsi untuk library QR code
+    $options = new QROptions([
+        'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
+        'eccLevel'         => QRCode::ECC_L,
+        'scale'            => 5,
+        'imageTransparent' => false,
+    ]);
+
+    try {
+        // 3. Render data QR menjadi data gambar PNG
+        $imageData = (new QRCode($options))->render($decodedQrData);
+
+        // 4. Gunakan Response object untuk mengirim gambar
+        // Ini adalah cara yang paling andal di CodeIgniter
+        return $this->response
+            ->setHeader('Content-Type', 'image/png')
+            ->setHeader('Content-Length', (string) strlen($imageData))
+            ->setHeader('Cache-Control', 'no-cache')
+            ->setBody($imageData);
+
+    } catch (\Exception $e) {
+        // Jika ada error saat membuat QR, catat dan kirim error 500
+        log_message('error', 'QR Code generation failed: ' . $e->getMessage());
+        return $this->response->setStatusCode(500, 'Error generating QR code image.');
     }
+}
 
     public function scanQrCode()
     {
@@ -351,29 +434,5 @@ public function resetDistribution($animalType)
             return redirect()->back()->withInput()->with('error', 'QR Code tidak valid.');
         }
     }
-    public function markAsDistributed($animalType, $id)
-    {
-        if (!in_groups(['admin', 'panitia'])) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
-        }
 
-        $model = ($animalType === 'kambing') ? $this->kambingDistModel : $this->sapiDistModel;
-
-        $distribution = $model->find($id);
-
-        if (!$distribution || $distribution['status'] === 'distributed') {
-            return redirect()->to('/distribution/' . $animalType)->with('error', 'Data tidak ditemukan atau status sudah diambil.');
-        }
-
-        $model->update($id, [
-            'status'                 => 'distributed',
-            'collected_at'           => date('Y-m-d H:i:s'),
-            'collected_by_user_id'   => user()->id,
-        ]);
-
-        $recipient = $this->userModel->find($distribution['recipient_user_id']);
-        $recipientName = $recipient ? $recipient->username : 'Penerima';
-
-        return redirect()->to('/distribution/' . $animalType)->with('message', 'Status untuk ' . $recipientName . ' berhasil diubah menjadi "Distributed".');
-    }
 }

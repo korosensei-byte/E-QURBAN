@@ -9,6 +9,7 @@ use CodeIgniter\Router\RouteCollection;
 // $routes->setAutoRoute(true); // Biarkan ini mati untuk keamanan di production
 // $routes->get('home/(:any)', 'Home::$1');
 // End Tahap Develop
+$routes->get('/test-qr', 'TestController::generate');
 
 $routes->get('/', 'User::index', ['filter' => 'login']); // Pastikan user harus login untuk ke halaman utama
 $routes->get('/admin', 'Admin::index', ['filter' => 'role:admin']);
@@ -63,6 +64,9 @@ $routes->group('distribution', ['filter' => 'role:admin,panitia'], function($rou
 
     $routes->post('kambing/reset', 'Distribution::resetDistribution/kambing');
     $routes->post('sapi/reset', 'Distribution::resetDistribution/sapi');
+
+    $routes->post('kambing/deleteall', 'Distribution::deleteDistribution/kambing');
+    $routes->post('sapi/deleteall', 'Distribution::deleteDistribution/sapi');
 });
 // Rute untuk generate gambar QR (TIDAK PERLU FILTER, JADIKAN PUBLIK)
 $routes->get('distribution/qrimage/(:any)', 'Distribution::generateQrImage/$1');

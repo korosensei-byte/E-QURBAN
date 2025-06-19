@@ -94,12 +94,46 @@ protected $sapiDistModel;    // Tambahkan ini
     return view('user/my_qr_card', $data);
 }
 
-   public function generateQrCodeForUser($qrCodeData)
-{
-    // Mulai output buffering untuk menangkap semua output
-    ob_start();
+//    public function generateQrCodeForUser($qrCodeData)
+// {
+//     // Mulai output buffering untuk menangkap semua output
+//     ob_start();
 
-    // Opsi untuk QR Code tetap sama
+//     // Opsi untuk QR Code tetap sama
+//     $options = new QROptions([
+//         'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
+//         'eccLevel'         => QRCode::ECC_L,
+//         'scale'            => 5,
+//         'imageTransparent' => false,
+//     ]);
+
+//     // Proses render QR code, outputnya akan ditangkap oleh buffer
+//     (new QRCode($options))->render($qrCodeData);
+
+//     // Ambil data gambar dari buffer dan simpan ke variabel
+//     $imageData = ob_get_contents();
+
+//     // Hentikan dan bersihkan buffer (membuang semua output yang tidak diinginkan)
+//     ob_end_clean();
+
+//     // Setelah buffer bersih, sekarang kita bisa kirim header dengan aman
+//     header('Content-Type: image/png');
+//     header('Content-Length: ' . strlen($imageData)); // Header tambahan yang baik untuk performa
+//     header('Cache-Control: no-cache');
+
+//     // Tampilkan data gambar murni ke browser
+//     echo $imageData;
+
+//     exit; // Tetap gunakan exit untuk memastikan tidak ada output lain dari framework
+// }
+
+// app/Controllers/User.php
+
+public function generateQrCodeForUser($qrCodeData)
+{
+    // BUG FIX: Tambahkan urldecode() untuk data dari URL
+    $decodedQrData = urldecode($qrCodeData);
+
     $options = new QROptions([
         'outputType'       => QRCode::OUTPUT_IMAGE_PNG,
         'eccLevel'         => QRCode::ECC_L,
@@ -107,24 +141,21 @@ protected $sapiDistModel;    // Tambahkan ini
         'imageTransparent' => false,
     ]);
 
-    // Proses render QR code, outputnya akan ditangkap oleh buffer
-    (new QRCode($options))->render($qrCodeData);
+    try {
+        // Render data yang sudah di-decode
+        $imageData = (new QRCode($options))->render($decodedQrData);
 
-    // Ambil data gambar dari buffer dan simpan ke variabel
-    $imageData = ob_get_contents();
+        // Gunakan Response object
+        return $this->response
+            ->setHeader('Content-Type', 'image/png')
+            ->setHeader('Content-Length', (string) strlen($imageData))
+            ->setHeader('Cache-Control', 'no-cache')
+            ->setBody($imageData);
 
-    // Hentikan dan bersihkan buffer (membuang semua output yang tidak diinginkan)
-    ob_end_clean();
-
-    // Setelah buffer bersih, sekarang kita bisa kirim header dengan aman
-    header('Content-Type: image/png');
-    header('Content-Length: ' . strlen($imageData)); // Header tambahan yang baik untuk performa
-    header('Cache-Control: no-cache');
-
-    // Tampilkan data gambar murni ke browser
-    echo $imageData;
-
-    exit; // Tetap gunakan exit untuk memastikan tidak ada output lain dari framework
+    } catch (\Exception $e) {
+        log_message('error', 'User QR Code generation failed: ' . $e->getMessage());
+        return $this->response->setStatusCode(500, 'Error generating user QR code image.');
+    }
 }
 
     public function registerQurban()

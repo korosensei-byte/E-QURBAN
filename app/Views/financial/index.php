@@ -79,25 +79,31 @@
                             <th>Deskripsi</th>
                             <th>Dicatat Oleh</th>
                             <th>Tanggal</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $i = 1; ?>
-                        <?php foreach ($transactions as $transaction): ?>
-                            <tr>
-                                <td><?= $i++; ?></td>
-                                <td>Rp <?= number_format($transaction['amount'], 0, ',', '.'); ?></td>
-                                <td><?= esc($transaction['description']); ?></td>
-                                <td>
-                                    <?php
-                                        $userModel = new \Myth\Auth\Models\UserModel();
-                                        $user = $userModel->find($transaction['related_user_id']);
-                                        echo $user ? esc($user->username) : 'N/A';
-                                    ?>
-                                </td>
-                                <td><?= date('d M Y H:i', strtotime($transaction['created_at'])); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
+<?php foreach ($transactions as $transaction): ?>
+    <tr>
+        <td><?= $i++; ?></td>
+        <td>Rp <?= number_format($transaction['amount'], 0, ',', '.'); ?></td>
+        <td><?= esc($transaction['description']); ?></td>
+        <td>
+            <?php
+                $userModel = new \Myth\Auth\Models\UserModel();
+                $user = $userModel->find($transaction['related_user_id']);
+                echo $user ? esc($user->username) : 'N/A';
+            ?>
+        </td>
+        <td><?= date('d M Y H:i', strtotime($transaction['created_at'])); ?></td>
+        <td>
+            <a href="<?= base_url('financial/delete/' . $transaction['id']); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus transaksi ini?');">
+                <i class="fas fa-trash"></i> Hapus
+            </a>
+        </td>
+    </tr>
+<?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
